@@ -249,13 +249,33 @@
       }
     }
 
+    // 安全にカテゴリ名を取得する関数
+    function getCategoryName(catId) {
+      if (catId === null || catId === undefined || catId === '') return '未分類';
+      
+      // 1. マップに直接一致（文字列・数値両対応）
+      if (categoryMap[catId]) return categoryMap[catId];
+      if (categoryMap[String(catId)]) return categoryMap[String(catId)];
+
+      const strId = String(catId);
+      
+      // 2. もしもともと「食費」などの文字が直接入っている場合
+      if (!strId.includes('-') && strId.length < 20) {
+        return strId;
+      }
+
+      return '未分類';
+    }
+
     async function fetchCategories() {
       try {
         const res = await fetch(`${API_URL}?endpoint=/categories`);
         const json = await res.json();
         if (json.success && json.data) {
           categoryMap = {};
-          json.data.forEach(cat => { categoryMap[cat.id] = cat.name; });
+          json.data.forEach(cat => { 
+            categoryMap[String(cat.id)] = cat.name; 
+          });
 
           const select = document.getElementById('input-category');
           if (select) {
@@ -318,10 +338,7 @@
       const visibleItems = reversed.slice(0, displayLimit);
 
       let html = visibleItems.map(item => {
-        let catName = categoryMap[item.category_id];
-        if (!catName) {
-          catName = (item.category_id && !item.category_id.includes('-')) ? item.category_id : '未分類';
-        }
+        const catName = getCategoryName(item.category_id);
 
         const titleText = item.store_id 
           ? `${escapeHtml(catName)} (${escapeHtml(item.store_id)})`
@@ -377,6 +394,7 @@
 
     function changeMonth(delta) {
       const input = document.getElementById('summary-month-input');
+      if (!input || !input.value) return;
       let [year, month] = input.value.split('-').map(Number);
       
       month += delta;
@@ -398,7 +416,7 @@
 
       currentTransactions.forEach(item => {
         if (item.date) {
-          const yr = item.date.split('-')[0];
+          const yr = String(item.date).split('-')[0];
           if (yr) years.add(Number(yr));
         }
       });
@@ -410,8 +428,9 @@
 
     function changeYear(delta) {
       const select = document.getElementById('summary-year-select');
+      if (!select) return;
       const currentIndex = select.selectedIndex;
-      const targetIndex = currentIndex - delta; // ソートが降順のため引き算
+      const targetIndex = currentIndex - delta;
 
       if (targetIndex >= 0 && targetIndex < select.options.length) {
         select.selectedIndex = targetIndex;
@@ -424,16 +443,17 @@
       const monthInput = document.getElementById('summary-month-input');
       const yearSelect = document.getElementById('summary-year-select');
 
-      if (monthInput) selectedMonth = monthInput.value;
-      if (yearSelect) selectedYear = yearSelect.value;
+      if (monthInput && monthInput.value) selectedMonth = monthInput.value;
+      if (yearSelect && yearSelect.value) selectedYear = yearSelect.value;
 
       // 対象データのフィルタリング
       const filtered = currentTransactions.filter(item => {
-        if (!item.date) return false;
+        if (!item || !item.date) return false;
+        const dateStr = String(item.date);
         if (summaryMode === 'month') {
-          return item.date.startsWith(selectedMonth);
+          return dateStr.startsWith(selectedMonth);
         } else {
-          return item.date.startsWith(selectedYear);
+          return dateStr.startsWith(selectedYear);
         }
       });
 
@@ -448,12 +468,7 @@
           totalIncome += amt;
         } else if (item.type === 'expense') {
           totalExpense += amt;
-          
-          let catName = categoryMap[item.category_id];
-          if (!catName) {
-            catName = (item.category_id && !item.category_id.includes('-')) ? item.category_id : '未分類';
-          }
-
+          const catName = getCategoryName(item.category_id);
           categoryTotals[catName] = (categoryTotals[catName] || 0) + amt;
         }
       });
@@ -461,15 +476,21 @@
       const balance = totalIncome - totalExpense;
 
       // サマリーカードの反映
-      document.getElementById('sum-income').innerText = `+¥${totalIncome.toLocaleString()}`;
-      document.getElementById('sum-expense').innerText = `-¥${totalExpense.toLocaleString()}`;
-      
+      const sumIncomeEl = document.getElementById('sum-income');
+      const sumExpenseEl = document.getElementById('sum-expense');
       const balanceEl = document.getElementById('sum-balance');
-      balanceEl.innerText = `${balance >= 0 ? '+' : ''}¥${balance.toLocaleString()}`;
-      balanceEl.style.color = balance < 0 ? 'var(--expense)' : 'var(--primary)';
+
+      if (sumIncomeEl) sumIncomeEl.innerText = `+¥${totalIncome.toLocaleString()}`;
+      if (sumExpenseEl) sumExpenseEl.innerText = `-¥${totalExpense.toLocaleString()}`;
+      
+      if (balanceEl) {
+        balanceEl.innerText = `${balance >= 0 ? '+' : ''}¥${balance.toLocaleString()}`;
+        balanceEl.style.color = balance < 0 ? 'var(--expense)' : 'var(--primary)';
+      }
 
       // カテゴリ別内訳の反映
       const breakdownContainer = document.getElementById('category-breakdown-list');
+      if (!breakdownContainer) return;
       
       const sortedCategories = Object.entries(categoryTotals)
         .sort((a, b) => b[1] - a[1]);
