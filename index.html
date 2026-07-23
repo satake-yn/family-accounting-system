@@ -424,33 +424,23 @@
     }
 
     // カテゴリ一覧を取得
-    async function fetchCategories() {
-      const select = document.getElementById('category_id');
-      if (!API_URL || API_URL === "YOUR_GAS_WEB_APP_URL") {
-        select.innerHTML = '<option value="">API_URLを設定してください</option>';
-        return;
-      }
+    let categoryMap = {}; // グローバルに保持
 
-      try {
-        const res = await fetch(`${API_URL}?endpoint=/categories`);
-        const json = await res.json();
-        
-        if (json.success && json.data) {
-          select.innerHTML = '<option value="">カテゴリを選択</option>';
-          json.data.forEach(cat => {
-            const opt = document.createElement('option');
-            opt.value = cat.id;
-            opt.textContent = cat.name;
-            select.appendChild(opt);
-          });
-        } else {
-          select.innerHTML = '<option value="">カテゴリ取得失敗</option>';
-        }
-      } catch (err) {
-        console.error(err);
-        select.innerHTML = '<option value="">通信エラー</option>';
-      }
+async function fetchCategories() {
+  try {
+    const res = await fetch(`${API_URL}?endpoint=/categories`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      // ID -> 名前 の辞書(Map)を作成
+      json.data.forEach(cat => {
+        categoryMap[cat.id] = cat.name;
+      });
+      // 画面のカテゴリ選択UIなどを描画する処理...
     }
+  } catch (err) {
+    console.error('カテゴリ取得エラー:', err);
+  }
+}
 
     // フォーム送信処理
     async function handleSubmit(e) {
@@ -533,34 +523,113 @@ function switchTab(tabName) {
 }
 
 // 履歴データを取得して表示
+let currentTransactions = []; // 全履歴を保持
+let displayLimit = 30;         // 初期表示件数
+
 async function fetchTransactions() {
   const container = document.getElementById('history-list');
 
-  // ① まずはスマホ内に残っている「前回のデータ」を一瞬で表示！
+  // キャッシュがあれば表示
   const cachedData = localStorage.getItem('kakeibo_transactions_cache');
   if (cachedData) {
-    renderHistoryList(JSON.parse(cachedData));
+    currentTransactions = JSON.parse(cachedData);
+    renderHistoryList();
   } else {
     container.innerHTML = '<p class="loading-text">読み込み中...</p>';
   }
 
-  // ② 裏で最新データを取得
   try {
     const res = await fetch(`${API_URL}?endpoint=/transactions`);
     const json = await res.json();
 
     if (json.success && json.data) {
-      // 最新データをキャッシュに保存
+      currentTransactions = json.data;
       localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(json.data));
-      // 画面を最新データに差し替え
-      renderHistoryList(json.data);
+      renderHistoryList();
     }
   } catch (err) {
     console.error(err);
-    if (!cachedData) {
-      container.innerHTML = '<p class="empty-text">データの取得に失敗しました</p>';
-    }
   }
+}
+
+// 履歴一覧を描画する関数
+function renderHistoryList() {
+  const container = document.getElementById('history-list');
+  if (!currentTransactions || currentTransactions.length === 0) {
+    container.innerHTML = '<p class="empty-text">まだ履歴がありません</p>';
+    return;
+  }
+
+  // 新しい順（降順）に並び替え
+  const reversed = [...currentTransactions].reverse();
+  // 表示件数分だけ切り出し
+  const visibleItems = reversed.slice(0, displayLimit);
+
+  let html = visibleItems.map(item => {
+    // UUIDではなくカテゴリ名に変換（見つからなければそのまま表示）
+    const catName = categoryMap[item.category_id] || item.category_id || '未分類';
+
+    return `
+      <div class="history-item">
+        <div class="history-left">
+          <span class="history-category">${escapeHtml(catName)}</span>
+          <span class="history-sub">${item.date} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
+          ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
+        </div>
+        <div class="history-right">
+          <span class="history-amount ${item.type}">
+            ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
+          </span>
+          <div class="action-btns">
+            <button class="edit-btn" onclick="startEditTransaction('${item.id}')">編集</button>
+            <button class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 30件以上残っている場合は「もっと見る」ボタンを追加
+  if (reversed.length > displayLimit) {
+    html += `
+      <div class="more-btn-container" style="text-align: center; margin: 20px 0;">
+        <button class="more-btn" onclick="loadMoreHistory()">さらに表示する (${displayLimit} / ${reversed.length}件)</button>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+// 件数を増やす関数
+function loadMoreHistory() {
+  displayLimit += 30;
+  renderHistoryList();
+}
+
+// 明細の編集を開始する関数
+function startEditTransaction(id) {
+  const item = currentTransactions.find(t => String(t.id) === String(id));
+  if (!item) return;
+
+  // 入力フォームの各要素にデータをセット
+  document.getElementById('input-date').value = item.date;
+  document.getElementById('input-amount').value = item.amount;
+  document.getElementById('input-type').value = item.type;
+  document.getElementById('input-category').value = item.category_id;
+  if (document.getElementById('input-store')) document.getElementById('input-store').value = item.store_id || '';
+  if (document.getElementById('input-memo')) document.getElementById('input-memo').value = item.memo || '';
+
+  // 編集モード用のIDをフォームに隠し文字などで保持（またはグローバル変数へ）
+  window.editingTransactionId = item.id;
+
+  // ボタンの表示を「更新する」に変更
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) submitBtn.innerText = '✏️ 明細を更新する';
+
+  // 入力タブへ自動切替
+  switchTab('input');
+  showToast('編集モードになりました');
 }
 
 // 描画用の共通処理
