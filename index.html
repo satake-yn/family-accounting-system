@@ -42,6 +42,13 @@
 
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+    /* 集計サマリー用スタイル */
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .summary-box { background: #f9fafb; padding: 12px; border-radius: 8px; text-align: center; }
+    .summary-box-label { font-size: 0.8rem; color: #6b7280; margin-bottom: 4px; }
+    .summary-box-value { font-size: 1.2rem; font-weight: bold; }
+    .summary-total { background: #f9fafb; padding: 12px; border-radius: 8px; text-align: center; }
+
     /* ボタン */
     .btn-group { display: flex; gap: 10px; margin-top: 16px; }
     .btn { padding: 10px 16px; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
@@ -73,15 +80,35 @@
 
   <!-- タブ切り替えボタン -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('transactions')">取引入力・履歴</button>
-    <button class="tab-btn" onclick="switchTab('categories')">カテゴリ管理</button>
-    <button class="tab-btn" onclick="switchTab('recurring')">定期収支</button>
+    <button class="tab-btn active" onclick="switchTab('transactions', event)">取引入力・履歴</button>
+    <button class="tab-btn" onclick="switchTab('categories', event)">カテゴリ管理</button>
+    <button class="tab-btn" onclick="switchTab('recurring', event)">定期収支</button>
   </div>
 
   <!-- ========================================== -->
   <!-- タブ 1: 取引入力・履歴 -->
   <!-- ========================================== -->
   <div id="tab-transactions" class="tab-content active">
+    
+    <!-- 集計サマリーカード -->
+    <div class="card">
+      <div class="card-title">収支サマリー</div>
+      <div class="summary-grid">
+        <div class="summary-box">
+          <div class="summary-box-label">総収入</div>
+          <div id="summary-income" class="summary-box-value" style="color: var(--success-color);">0 円</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-box-label">総支出</div>
+          <div id="summary-expense" class="summary-box-value" style="color: var(--danger-color);">0 円</div>
+        </div>
+      </div>
+      <div class="summary-total">
+        <div class="summary-box-label">収支差額</div>
+        <div id="summary-balance" style="font-size: 1.3rem; font-weight: bold; color: var(--primary-color);">0 円</div>
+      </div>
+    </div>
+
     <!-- 入力/編集フォーム -->
     <div class="card">
       <div class="card-title">
@@ -119,7 +146,7 @@
           </div>
         </div>
 
-        <!-- ★収入時のみ表示されるエリア -->
+        <!-- 収入時のみ表示されるエリア -->
         <div class="form-group hidden" id="tx-owner-group">
           <label for="tx-owner">収入者（得た人）</label>
           <input type="text" id="tx-owner" placeholder="例: 夫、妻、副業">
@@ -241,7 +268,7 @@
           </div>
         </div>
 
-        <!-- ★収入時のみ表示されるエリア -->
+        <!-- 収入時のみ表示されるエリア -->
         <div class="form-group hidden" id="rec-owner-group">
           <label for="rec-owner">収入者</label>
           <input type="text" id="rec-owner" placeholder="例: 夫">
@@ -300,10 +327,7 @@
 
     // 初期化処理
     window.addEventListener('DOMContentLoaded', () => {
-      // 本日の日付をデフォルト設定
       document.getElementById('tx-date').valueAsDate = new Date();
-      
-      // データ一括取得
       loadAllData();
     });
 
@@ -316,7 +340,6 @@
           const res = await fetch(`${GAS_URL}?endpoint=${endpoint}`);
           return await res.json();
         } else {
-          // POST / DELETE など
           const res = await fetch(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -333,24 +356,20 @@
 
     // 全データ読み込み
     async function loadAllData() {
-      // カテゴリ取得
       const catRes = await apiFetch('/categories');
       if (catRes.success) categoriesData = catRes.data || [];
 
-      // 取引履歴取得
       const txRes = await apiFetch('/transactions');
       if (txRes.success) transactionsData = txRes.data || [];
 
-      // 定期収支取得
       const recRes = await apiFetch('/recurring');
       if (recRes.success) recurringData = recRes.data || [];
 
-      // 各画面のレンダリング
       renderCategories();
       renderTransactions();
       renderRecurring();
+      renderSummary();
       
-      // フォームの選択肢初期化
       onTxTypeChange();
       onRecTypeChange();
     }
@@ -358,7 +377,7 @@
     // ------------------------------------------
     // タブ切り替え処理
     // ------------------------------------------
-    function switchTab(tabName) {
+    function switchTab(tabName, event) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
@@ -367,27 +386,22 @@
     }
 
     // ------------------------------------------
-    // ★核心機能①: 支出/収入の表示切り替え ＆ カテゴリ絞り込み
+    // 収支/収入の表示切り替え ＆ カテゴリ絞り込み
     // ------------------------------------------
-
-    // 取引フォームのタイプ変更時
     function onTxTypeChange() {
       const type = document.getElementById('tx-type').value;
       const ownerGroup = document.getElementById('tx-owner-group');
 
-      // 1. 収入の時だけ「収入者」入力欄を表示
       if (type === 'income') {
         ownerGroup.classList.remove('hidden');
       } else {
         ownerGroup.classList.add('hidden');
-        document.getElementById('tx-owner').value = ''; // 支出時はクリア
+        document.getElementById('tx-owner').value = '';
       }
 
-      // 2. タイプに対応するカテゴリだけに絞り込み
       updateCategoryDropdown('tx-category', type);
     }
 
-    // 定期収支フォームのタイプ変更時
     function onRecTypeChange() {
       const type = document.getElementById('rec-type').value;
       const ownerGroup = document.getElementById('rec-owner-group');
@@ -402,7 +416,6 @@
       updateCategoryDropdown('rec-category', type);
     }
 
-    // ドロップダウン更新ヘルパー
     function updateCategoryDropdown(selectId, type) {
       const select = document.getElementById(selectId);
       select.innerHTML = '<option value="">選択してください</option>';
@@ -417,10 +430,34 @@
     }
 
     // ------------------------------------------
+    // 集計サマリー計算・表示
+    // ------------------------------------------
+    function renderSummary() {
+      let totalIncome = 0;
+      let totalExpense = 0;
+
+      transactionsData.forEach(item => {
+        const amount = Number(item.amount) || 0;
+        if (item.type === 'income') {
+          totalIncome += amount;
+        } else if (item.type === 'expense') {
+          totalExpense += amount;
+        }
+      });
+
+      const balance = totalIncome - totalExpense;
+
+      document.getElementById('summary-income').textContent = totalIncome.toLocaleString() + ' 円';
+      document.getElementById('summary-expense').textContent = totalExpense.toLocaleString() + ' 円';
+      
+      const balanceEl = document.getElementById('summary-balance');
+      balanceEl.textContent = balance.toLocaleString() + ' 円';
+      balanceEl.style.color = balance >= 0 ? 'var(--primary-color)' : 'var(--danger-color)';
+    }
+
+    // ------------------------------------------
     // タブ 1: 取引履歴（Transactions）操作
     // ------------------------------------------
-
-    // 履歴テーブル描画
     function renderTransactions() {
       const tbody = document.getElementById('tx-table-body');
       if (transactionsData.length === 0) {
@@ -449,7 +486,6 @@
       }).join('');
     }
 
-    // 取引保存（新規・更新）
     async function handleSaveTransaction(e) {
       e.preventDefault();
       const id = document.getElementById('tx-id').value;
@@ -461,7 +497,7 @@
         amount: Number(document.getElementById('tx-amount').value),
         type: type,
         category_id: document.getElementById('tx-category').value,
-        owner: type === 'income' ? document.getElementById('tx-owner').value : '', // 収入時のみ送信
+        owner: type === 'income' ? document.getElementById('tx-owner').value : '',
         memo: document.getElementById('tx-memo').value
       };
 
@@ -473,7 +509,6 @@
       }
     }
 
-    // 編集モーダルセット
     function editTransaction(id) {
       const item = transactionsData.find(t => String(t.id) === String(id));
       if (!item) return;
@@ -481,7 +516,6 @@
       document.getElementById('tx-id').value = item.id;
       document.getElementById('tx-type').value = item.type || 'expense';
       
-      // タイプ変更に伴う画面切り替え
       onTxTypeChange();
 
       document.getElementById('tx-date').value = item.date;
@@ -519,7 +553,6 @@
     // ------------------------------------------
     // タブ 2: カテゴリ（Categories）操作
     // ------------------------------------------
-
     function renderCategories() {
       const tbody = document.getElementById('cat-table-body');
       if (categoriesData.length === 0) {
@@ -574,7 +607,6 @@
     // ------------------------------------------
     // タブ 3: 定期収支（Recurring）操作
     // ------------------------------------------
-
     function renderRecurring() {
       const tbody = document.getElementById('rec-table-body');
       if (recurringData.length === 0) {
