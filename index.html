@@ -3,86 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>家計簿アプリ</title>
+  <title>スマート家計簿</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#334155">
   <style>
     :root {
-      --primary: #2563eb;
-      --bg: #f8fafc;
+      --bg: #f1f5f9;
       --card-bg: #ffffff;
-      --text: #0f172a;
+      --text-main: #0f172a;
       --text-muted: #64748b;
       --border: #e2e8f0;
-      --expense: #ef4444;
-      --income: #10b981;
-      --radius: 12px;
+      --primary: #334155;
+      --primary-hover: #1e293b;
+      --expense: #dc2626;
+      --income: #059669;
+      --radius: 10px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding-bottom: 80px; }
+    body { background: var(--bg); color: var(--text-main); padding-bottom: 90px; }
 
-    .header { background: var(--card-bg); padding: 16px; text-align: center; font-weight: bold; border-bottom: 1px solid var(--border); }
-    .container { max-width: 500px; margin: 0 auto; padding: 16px; }
+    .header { background: var(--card-bg); padding: 18px 16px; text-align: center; font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--border); letter-spacing: 0.05em; color: var(--primary); }
+    .container { max-width: 520px; margin: 0 auto; padding: 16px; }
 
-    /* ナビゲーションタブ */
-    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; border-top: 1px solid var(--border); z-index: 100; }
-    .nav-tab { flex: 1; padding: 12px 0; text-align: center; font-size: 0.8rem; color: var(--text-muted); background: none; border: none; cursor: pointer; }
-    .nav-tab.active { color: var(--primary); font-weight: bold; }
+    /* ナビゲーション */
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; border-top: 1px solid var(--border); z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
+    .nav-tab { flex: 1; padding: 14px 0; text-align: center; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); background: none; border: none; cursor: pointer; border-top: 3px solid transparent; transition: all 0.2s; }
+    .nav-tab.active { color: var(--primary); border-top-color: var(--primary); font-weight: 700; background: #f8fafc; }
 
-    /* フォーム要素 */
+    /* 共通フォーム */
     .tab-content.hidden { display: none; }
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
-    .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--card-bg); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+    .form-group input, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: var(--card-bg); color: var(--text-main); outline: none; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
     
-    .primary-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
-    .secondary-btn { background: #e2e8f0; color: var(--text); border: none; padding: 14px 20px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    .primary-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+    .primary-btn:hover { background: var(--primary-hover); }
+    .secondary-btn { background: #e2e8f0; color: var(--text-main); border: none; padding: 14px 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
 
-    /* 履歴表示 */
-    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .refresh-btn { background: transparent; border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+    /* 履歴リスト */
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .history-header h3 { font-size: 1rem; color: var(--primary); }
+    .refresh-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
     
-    .history-item { background: var(--card-bg); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .history-left { display: flex; flex-direction: column; gap: 4px; }
-    .history-category { font-size: 0.95rem; font-weight: bold; color: #1e293b; }
-    .history-sub { font-size: 0.75rem; color: var(--text-muted); }
-    .history-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-    .history-amount { font-size: 1.1rem; font-weight: bold; }
+    .history-card { background: var(--card-bg); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+    .history-main { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .history-title { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+    .history-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+    .history-amount { font-size: 1.1rem; font-weight: 700; text-align: right; }
     .history-amount.expense { color: var(--expense); }
     .history-amount.income { color: var(--income); }
 
-    .action-btns { display: flex; gap: 6px; }
-    .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
-    .delete-btn { background: #fef2f2; color: var(--expense); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
-    .more-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; color: var(--primary); cursor: pointer; }
+    .tag-badge { display: inline-block; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; margin-right: 4px; margin-top: 4px; }
+    .owner-badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; margin-right: 4px; }
 
-    /* 集計ダッシュボードのスタイル */
-    .summary-controls { margin-bottom: 16px; }
-    .summary-type-selector { display: flex; background: var(--border); padding: 3px; border-radius: 8px; margin-bottom: 12px; }
-    .type-btn { flex: 1; padding: 8px 0; border: none; background: transparent; font-size: 0.85rem; font-weight: bold; color: var(--text-muted); cursor: pointer; border-radius: 6px; }
-    .type-btn.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    /* 履歴ボタンの大型化 */
+    .card-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .btn-action { flex: 1; padding: 10px 0; border-radius: 6px; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-align: center; }
+    .btn-edit { background: #f1f5f9; color: var(--primary); }
+    .btn-delete { background: #fef2f2; color: var(--expense); }
 
-    .date-picker-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--card-bg); padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); }
-    .picker-btn { background: transparent; border: none; font-size: 1rem; padding: 4px 12px; cursor: pointer; color: var(--primary); font-weight: bold; }
-    .date-picker-bar input, .date-picker-bar select { border: none; font-size: 1rem; font-weight: bold; color: var(--text); background: transparent; text-align: center; cursor: pointer; outline: none; }
+    /* 集計 */
+    .summary-type-selector { display: flex; background: #e2e8f0; padding: 3px; border-radius: 8px; margin-bottom: 14px; }
+    .type-btn { flex: 1; padding: 8px 0; border: none; background: transparent; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: 6px; }
+    .type-btn.active { background: var(--card-bg); color: var(--primary); font-weight: 700; }
 
-    .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
-    .summary-cards .card { background: var(--card-bg); padding: 12px 6px; border-radius: var(--radius); border: 1px solid var(--border); text-align: center; }
-    .card-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
-    .card-value { font-size: 0.95rem; font-weight: bold; word-break: break-all; }
-    .income-card .card-value { color: var(--income); }
-    .expense-card .card-value { color: var(--expense); }
-    .balance-card .card-value { color: var(--primary); }
+    .date-picker-bar { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px; }
+    .picker-btn { background: transparent; border: none; font-size: 1.1rem; padding: 0 10px; cursor: pointer; color: var(--primary); font-weight: bold; }
+    .date-picker-bar input, .date-picker-bar select { border: none; font-size: 0.95rem; font-weight: 700; color: var(--text-main); background: transparent; text-align: center; outline: none; }
 
-    .category-summary-section h4 { font-size: 0.9rem; margin-bottom: 12px; color: var(--text); }
-    .cat-breakdown-item { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; }
-    .cat-breakdown-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; }
-    .cat-breakdown-amount { font-size: 0.85rem; color: var(--expense); }
-    .cat-progress-bg { background: #f1f5f9; height: 8px; border-radius: 4px; overflow: hidden; }
-    .cat-progress-fill { background: var(--primary); height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .summary-box { background: var(--card-bg); padding: 14px 10px; border-radius: var(--radius); border: 1px solid var(--border); text-align: center; }
+    .box-label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
+    .box-value { font-size: 0.95rem; font-weight: 700; word-break: break-all; }
 
-    .loading-text, .empty-text { text-align: center; color: var(--text-muted); padding: 24px 0; font-size: 0.9rem; }
+    .annual-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: var(--radius); padding: 14px; margin-bottom: 20px; }
+    .annual-title { font-size: 0.82rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .annual-amount { font-size: 1.2rem; font-weight: 800; color: var(--income); }
+
+    .section-title { font-size: 0.88rem; font-weight: 700; margin: 18px 0 10px 0; color: var(--primary); }
+    .breakdown-item { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; }
+    .breakdown-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+    .progress-bg { background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden; }
+    .progress-fill { background: var(--primary); height: 100%; border-radius: 3px; }
+
+    /* 設定・定期支出 */
+    .list-group { background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border-bottom: 1px solid var(--border); }
+    .list-item:last-child { border-bottom: none; }
+    .btn-sm-del { background: none; border: none; color: var(--expense); font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 4px 8px; }
+
+    .loading-text, .empty-text { text-align: center; color: var(--text-muted); padding: 24px 0; font-size: 0.88rem; }
   </style>
 </head>
 <body>
@@ -100,15 +112,31 @@
 
         <div class="form-group">
           <label for="input-type">収支区分</label>
-          <select id="input-type">
+          <select id="input-type" onchange="toggleIncomeFields()">
             <option value="expense">支出</option>
             <option value="income">収入</option>
           </select>
         </div>
 
+        <!-- 収入時のみ表示する必須フィールド -->
+        <div id="income-fields" class="form-group hidden" style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 16px;">
+          <div class="form-group">
+            <label for="input-owner">収入者名（人事管理用・必須）</label>
+            <input type="text" id="input-owner" placeholder="例: 山田 太郎">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="input-income-kind">収入の種別</label>
+            <select id="input-income-kind">
+              <option value="salary">給与 (年収対象)</option>
+              <option value="bonus">賞与 (年収対象)</option>
+              <option value="other">その他 (臨時収入・年収対象外)</option>
+            </select>
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="input-amount">金額</label>
-          <input type="number" id="input-amount" placeholder="1000" required>
+          <input type="number" id="input-amount" placeholder="0" required>
         </div>
 
         <div class="form-group">
@@ -119,16 +147,21 @@
         </div>
 
         <div class="form-group">
-          <label for="input-store">店舗名・利用先（任意）</label>
+          <label for="input-tags">タグ (任意・カンマ区切りで複数可)</label>
+          <input type="text" id="input-tags" placeholder="例: 固定費, 食費, 9月旅行">
+        </div>
+
+        <div class="form-group">
+          <label for="input-store">店舗名・利用先 (任意)</label>
           <input type="text" id="input-store" placeholder="例: セブンイレブン">
         </div>
 
         <div class="form-group">
-          <label for="input-memo">メモ（任意）</label>
-          <input type="text" id="input-memo" placeholder="例: お弁当代">
+          <label for="input-memo">メモ (任意)</label>
+          <input type="text" id="input-memo" placeholder="例: 昼食代">
         </div>
 
-        <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
           <button type="submit" id="submit-btn" class="primary-btn">登録する</button>
           <button type="button" id="cancel-edit-btn" class="secondary-btn" onclick="resetForm()" style="display: none;">キャンセル</button>
         </div>
@@ -139,7 +172,7 @@
     <div id="tab-history" class="tab-content hidden">
       <div class="history-header">
         <h3>利用履歴</h3>
-        <button type="button" class="refresh-btn" onclick="fetchTransactions()">🔄 更新</button>
+        <button type="button" class="refresh-btn" onclick="fetchTransactions()">最新情報に更新</button>
       </div>
       <div id="history-list">
         <p class="loading-text">読み込み中...</p>
@@ -148,92 +181,151 @@
 
     <!-- ③ 集計タブ -->
     <div id="tab-summary" class="tab-content hidden">
-      <div class="summary-controls">
-        <div class="summary-type-selector">
-          <button type="button" class="type-btn active" id="btn-mode-month" onclick="setSummaryMode('month')">月別</button>
-          <button type="button" class="type-btn" id="btn-mode-year" onclick="setSummaryMode('year')">年別</button>
-        </div>
-        
-        <!-- 月選択 -->
-        <div id="selector-month" class="date-picker-bar">
-          <button type="button" class="picker-btn" onclick="changeMonth(-1)">◀</button>
-          <input type="month" id="summary-month-input" onchange="renderSummary()">
-          <button type="button" class="picker-btn" onclick="changeMonth(1)">▶</button>
-        </div>
+      <div class="summary-type-selector">
+        <button type="button" class="type-btn active" id="btn-mode-month" onclick="setSummaryMode('month')">月別</button>
+        <button type="button" class="type-btn" id="btn-mode-year" onclick="setSummaryMode('year')">年別</button>
+      </div>
+      
+      <div id="selector-month" class="date-picker-bar">
+        <button type="button" class="picker-btn" onclick="changeMonth(-1)">‹</button>
+        <input type="month" id="summary-month-input" onchange="renderSummary()">
+        <button type="button" class="picker-btn" onclick="changeMonth(1)">›</button>
+      </div>
 
-        <!-- 年選択 -->
-        <div id="selector-year" class="date-picker-bar hidden">
-          <button type="button" class="picker-btn" onclick="changeYear(-1)">◀</button>
-          <select id="summary-year-select" onchange="renderSummary()"></select>
-          <button type="button" class="picker-btn" onclick="changeYear(1)">▶</button>
+      <div id="selector-year" class="date-picker-bar hidden">
+        <button type="button" class="picker-btn" onclick="changeYear(-1)">‹</button>
+        <select id="summary-year-select" onchange="renderSummary()"></select>
+        <button type="button" class="picker-btn" onclick="changeYear(1)">›</button>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-box">
+          <div class="box-label">総収入</div>
+          <div class="box-value" id="sum-income" style="color: var(--income);">¥0</div>
+        </div>
+        <div class="summary-box">
+          <div class="box-label">総支出</div>
+          <div class="box-value" id="sum-expense" style="color: var(--expense);">¥0</div>
+        </div>
+        <div class="summary-box">
+          <div class="box-label">収支差額</div>
+          <div class="box-value" id="sum-balance" style="color: var(--primary);">¥0</div>
         </div>
       </div>
 
-      <!-- サマリーカード -->
-      <div class="summary-cards">
-        <div class="card income-card">
-          <div class="card-label">収入</div>
-          <div class="card-value" id="sum-income">¥0</div>
+      <!-- 人事向け年収確認ボックス -->
+      <div class="annual-box">
+        <div class="annual-title">年収対象額（給与 + 賞与）</div>
+        <div class="annual-amount" id="sum-annual-salary">¥0</div>
+        <div id="owner-salary-breakdown" style="margin-top: 8px; font-size: 0.78rem; color: var(--text-muted);"></div>
+      </div>
+
+      <div class="section-title">支出カテゴリ別内訳</div>
+      <div id="category-breakdown-list">
+        <p class="loading-text">集計中...</p>
+      </div>
+    </div>
+
+    <!-- ④ 定期支出タブ -->
+    <div id="tab-recurring" class="tab-content hidden">
+      <div class="history-header">
+        <h3>定期支出（固定費・サブスク）</h3>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+        毎月指定した日に自動で支出履歴へ追加されます。
+      </p>
+
+      <form onsubmit="addRecurringItem(event)" style="background: var(--card-bg); padding: 14px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px;">
+        <div class="form-group">
+          <label>名目</label>
+          <input type="text" id="rec-title" placeholder="例: 家賃, Netflix" required>
         </div>
-        <div class="card expense-card">
-          <div class="card-label">支出</div>
-          <div class="card-value" id="sum-expense">¥0</div>
+        <div class="form-group">
+          <label>金額</label>
+          <input type="number" id="rec-amount" placeholder="0" required>
         </div>
-        <div class="card balance-card">
-          <div class="card-label">収支</div>
-          <div class="card-value" id="sum-balance">¥0</div>
+        <div class="form-group">
+          <label>カテゴリ</label>
+          <select id="rec-category" required></select>
+        </div>
+        <div class="form-group">
+          <label>毎月の登録日</label>
+          <select id="rec-day">
+            <option value="1">毎月 1日</option>
+            <option value="15">毎月 15日</option>
+            <option value="25">毎月 25日</option>
+            <option value="99">毎月 月末</option>
+          </select>
+        </div>
+        <button type="submit" class="primary-btn">定期支出を追加</button>
+      </form>
+
+      <div class="list-group" id="recurring-list"></div>
+    </div>
+
+    <!-- ⑤ 設定・カテゴリ編集タブ -->
+    <div id="tab-settings" class="tab-content hidden">
+      <div class="history-header">
+        <h3>カテゴリ設定</h3>
+      </div>
+
+      <div class="form-group" style="background: var(--card-bg); padding: 14px; border-radius: var(--radius); border: 1px solid var(--border);">
+        <label>新規カテゴリ追加</label>
+        <div style="display: flex; gap: 8px;">
+          <select id="new-cat-type" style="width: 100px;">
+            <option value="expense">支出</option>
+            <option value="income">収入</option>
+          </select>
+          <input type="text" id="new-cat-name" placeholder="カテゴリ名" style="flex: 1;">
+          <button type="button" class="primary-btn" style="width: 80px;" onclick="addCategory()">追加</button>
         </div>
       </div>
 
-      <!-- カテゴリ内訳 -->
-      <div class="category-summary-section">
-        <h4>カテゴリ別支出内訳</h4>
-        <div id="category-breakdown-list">
-          <p class="loading-text">集計中...</p>
-        </div>
-      </div>
+      <div class="section-title">登録済みカテゴリ一覧</div>
+      <div class="list-group" id="category-settings-list"></div>
     </div>
   </div>
 
   <!-- 下部ナビゲーション -->
   <div class="nav-bar">
-    <button class="nav-tab active" onclick="switchTab('input')">📝 入力</button>
-    <button class="nav-tab" onclick="switchTab('history')">📜 履歴</button>
-    <button class="nav-tab" onclick="switchTab('summary')">📊 集計</button>
+    <button class="nav-tab active" onclick="switchTab('input')">入力</button>
+    <button class="nav-tab" onclick="switchTab('history')">履歴</button>
+    <button class="nav-tab" onclick="switchTab('summary')">集計</button>
+    <button class="nav-tab" onclick="switchTab('recurring')">定期支出</button>
+    <button class="nav-tab" onclick="switchTab('settings')">設定</button>
   </div>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzGtcPmOlCCsFjdtVBIzxg5Q6rgvgNAtLe2K6JlDJdCVGSe0ZZ7og6_8f3WHvPLD-Letg/exec";
 
     let categoryMap = {};
+    let categoryTypeList = []; // カスタム含む全カテゴリ
     let currentTransactions = [];
+    let recurringItems = [];
     let displayLimit = 30;
     let editingTransactionId = null;
 
-    // 集計ダッシュボード用変数
-    let summaryMode = 'month'; // 'month' または 'year'
-    let selectedMonth = new Date().toISOString().substring(0, 7); // 'YYYY-MM'
-    let selectedYear = new Date().getFullYear().toString(); // 'YYYY'
+    let summaryMode = 'month';
+    let selectedMonth = new Date().toISOString().substring(0, 7);
+    let selectedYear = new Date().getFullYear().toString();
 
     window.addEventListener('DOMContentLoaded', async () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      const dateInput = document.getElementById('input-date');
-      if (dateInput) dateInput.value = today;
+      document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('summary-month-input').value = selectedMonth;
 
-      const monthInput = document.getElementById('summary-month-input');
-      if (monthInput) monthInput.value = selectedMonth;
-
+      loadLocalSettings();
       await fetchCategories();
       await fetchTransactions();
+      checkAndApplyRecurring();
     });
 
     function switchTab(tabName) {
       document.querySelectorAll('.nav-tab').forEach((tab, index) => {
-        const names = ['input', 'history', 'summary'];
+        const names = ['input', 'history', 'summary', 'recurring', 'settings'];
         tab.classList.toggle('active', names[index] === tabName);
       });
       
@@ -241,29 +333,47 @@
       const target = document.getElementById(`tab-${tabName}`);
       if (target) target.classList.remove('hidden');
 
-      if (tabName === 'history') {
-        fetchTransactions();
-      } else if (tabName === 'summary') {
-        initYearOptions();
-        renderSummary();
-      }
+      if (tabName === 'history') fetchTransactions();
+      if (tabName === 'summary') { initYearOptions(); renderSummary(); }
+      if (tabName === 'recurring') renderRecurringList();
+      if (tabName === 'settings') renderCategorySettingsList();
     }
 
-    // 安全にカテゴリ名を取得する関数
+    function toggleIncomeFields() {
+      const type = document.getElementById('input-type').value;
+      const incomeFields = document.getElementById('income-fields');
+      const ownerInput = document.getElementById('input-owner');
+
+      if (type === 'income') {
+        incomeFields.classList.remove('hidden');
+        ownerInput.required = true;
+      } else {
+        incomeFields.classList.add('hidden');
+        ownerInput.required = false;
+      }
+      updateCategoryDropdown();
+    }
+
+    function loadLocalSettings() {
+      const savedRec = localStorage.getItem('kakeibo_recurring');
+      if (savedRec) recurringItems = JSON.parse(savedRec);
+
+      const savedCats = localStorage.getItem('kakeibo_custom_cats');
+      if (savedCats) categoryTypeList = JSON.parse(savedCats);
+    }
+
+    function saveLocalSettings() {
+      localStorage.setItem('kakeibo_recurring', JSON.stringify(recurringItems));
+      localStorage.setItem('kakeibo_custom_cats', JSON.stringify(categoryTypeList));
+    }
+
+    /* --- カテゴリ管理 --- */
     function getCategoryName(catId) {
-      if (catId === null || catId === undefined || catId === '') return '未分類';
-      
-      // 1. マップに直接一致（文字列・数値両対応）
+      if (!catId) return '未分類';
       if (categoryMap[catId]) return categoryMap[catId];
       if (categoryMap[String(catId)]) return categoryMap[String(catId)];
-
       const strId = String(catId);
-      
-      // 2. もしもともと「食費」などの文字が直接入っている場合
-      if (!strId.includes('-') && strId.length < 20) {
-        return strId;
-      }
-
+      if (!strId.includes('-') && strId.length < 20) return strId;
       return '未分類';
     }
 
@@ -273,25 +383,81 @@
         const json = await res.json();
         if (json.success && json.data) {
           categoryMap = {};
-          json.data.forEach(cat => { 
-            categoryMap[String(cat.id)] = cat.name; 
+          const apiCats = json.data.map(c => ({ id: String(c.id), name: c.name, type: 'expense' }));
+          
+          if (categoryTypeList.length === 0) {
+            categoryTypeList = apiCats;
+          }
+
+          categoryTypeList.forEach(c => {
+            categoryMap[c.id] = c.name;
           });
 
-          const select = document.getElementById('input-category');
-          if (select) {
-            select.innerHTML = json.data.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-          }
-
-          if (currentTransactions.length > 0) {
-            renderHistoryList();
-            renderSummary();
-          }
+          updateCategoryDropdown();
         }
       } catch (err) {
         console.error('カテゴリ取得エラー:', err);
       }
     }
 
+    function updateCategoryDropdown() {
+      const type = document.getElementById('input-type').value;
+      const select = document.getElementById('input-category');
+      const recSelect = document.getElementById('rec-category');
+
+      const filtered = categoryTypeList.filter(c => !c.type || c.type === type);
+      const optionsHtml = filtered.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+      if (select) select.innerHTML = optionsHtml || '<option value="">(カテゴリなし)</option>';
+      if (recSelect) recSelect.innerHTML = categoryTypeList.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    }
+
+    function addCategory() {
+      const name = document.getElementById('new-cat-name').value.trim();
+      const type = document.getElementById('new-cat-type').value;
+      if (!name) return;
+
+      const newId = 'cat_' + Date.now();
+      categoryTypeList.push({ id: newId, name: name, type: type });
+      categoryMap[newId] = name;
+
+      saveLocalSettings();
+      updateCategoryDropdown();
+      renderCategorySettingsList();
+      document.getElementById('new-cat-name').value = '';
+      showToast('カテゴリを追加しました');
+    }
+
+    function deleteCategory(id) {
+      categoryTypeList = categoryTypeList.filter(c => c.id !== id);
+      delete categoryMap[id];
+      saveLocalSettings();
+      updateCategoryDropdown();
+      renderCategorySettingsList();
+      showToast('カテゴリを削除しました');
+    }
+
+    function renderCategorySettingsList() {
+      const container = document.getElementById('category-settings-list');
+      if (!container) return;
+
+      if (categoryTypeList.length === 0) {
+        container.innerHTML = '<p class="empty-text">登録済みカテゴリはありません</p>';
+        return;
+      }
+
+      container.innerHTML = categoryTypeList.map(c => `
+        <div class="list-item">
+          <div>
+            <span style="font-weight: 700;">${escapeHtml(c.name)}</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 6px;">(${c.type === 'income' ? '収入' : '支出'})</span>
+          </div>
+          <button class="btn-sm-del" onclick="deleteCategory('${c.id}')">削除</button>
+        </div>
+      `).join('');
+    }
+
+    /* --- 取引データ取得・表示 --- */
     async function fetchTransactions() {
       const container = document.getElementById('history-list');
 
@@ -318,13 +484,9 @@
         }
       } catch (err) {
         console.error('履歴取得エラー:', err);
-        if (!cached && container) {
-          container.innerHTML = '<p class="empty-text">データの読み込みに失敗しました</p>';
-        }
       }
     }
 
-    /* --- 履歴機能 --- */
     function renderHistoryList() {
       const container = document.getElementById('history-list');
       if (!container) return;
@@ -339,26 +501,30 @@
 
       let html = visibleItems.map(item => {
         const catName = getCategoryName(item.category_id);
-
-        const titleText = item.store_id 
-          ? `${escapeHtml(catName)} (${escapeHtml(item.store_id)})`
-          : escapeHtml(catName);
+        const tags = item.tags ? String(item.tags).split(',').map(t => t.trim()).filter(Boolean) : [];
 
         return `
-          <div class="history-item">
-            <div class="history-left">
-              <span class="history-category">${titleText}</span>
-              <span class="history-sub">📅 ${escapeHtml(item.date)}</span>
-              ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
-            </div>
-            <div class="history-right">
-              <span class="history-amount ${item.type}">
-                ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
-              </span>
-              <div class="action-btns">
-                <button type="button" class="edit-btn" onclick="startEditTransaction('${item.id}')">編集</button>
-                <button type="button" class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
+          <div class="history-card">
+            <div class="history-main">
+              <div>
+                <div class="history-title">
+                  ${item.owner ? `<span class="owner-badge">${escapeHtml(item.owner)}</span>` : ''}
+                  ${escapeHtml(catName)}
+                </div>
+                <div class="history-sub">${escapeHtml(item.date)} ${item.store_id ? `| ${escapeHtml(item.store_id)}` : ''}</div>
+                ${item.memo ? `<div class="history-sub">${escapeHtml(item.memo)}</div>` : ''}
+                <div>
+                  ${tags.map(t => `<span class="tag-badge">#${escapeHtml(t)}</span>`).join('')}
+                </div>
               </div>
+              <div class="history-amount ${item.type}">
+                ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
+              </div>
+            </div>
+            
+            <div class="card-actions">
+              <button class="btn-action btn-edit" onclick="startEditTransaction('${item.id}')">編集する</button>
+              <button class="btn-action btn-delete" onclick="deleteTransaction('${item.id}')">削除する</button>
             </div>
           </div>
         `;
@@ -367,7 +533,7 @@
       if (reversed.length > displayLimit) {
         html += `
           <div style="text-align: center; margin: 20px 0;">
-            <button type="button" class="more-btn" onclick="loadMoreHistory()">さらに表示する (${displayLimit} / ${reversed.length}件)</button>
+            <button type="button" class="secondary-btn" onclick="displayLimit += 30; renderHistoryList();">さらに表示する</button>
           </div>
         `;
       }
@@ -375,12 +541,111 @@
       container.innerHTML = html;
     }
 
-    function loadMoreHistory() {
-      displayLimit += 30;
-      renderHistoryList();
+    /* --- 定期支出（固定費）処理 --- */
+    function addRecurringItem(e) {
+      e.preventDefault();
+      const title = document.getElementById('rec-title').value.trim();
+      const amount = Number(document.getElementById('rec-amount').value);
+      const catId = document.getElementById('rec-category').value;
+      const day = document.getElementById('rec-day').value;
+
+      if (!title || !amount) return;
+
+      recurringItems.push({
+        id: 'rec_' + Date.now(),
+        title: title,
+        amount: amount,
+        category_id: catId,
+        day: day,
+        last_applied: '' // YYYY-MM
+      });
+
+      saveLocalSettings();
+      renderRecurringList();
+      document.getElementById('rec-title').value = '';
+      document.getElementById('rec-amount').value = '';
+      showToast('定期支出を追加しました');
+      checkAndApplyRecurring();
     }
 
-    /* --- 集計ダッシュボード機能 --- */
+    function deleteRecurringItem(id) {
+      recurringItems = recurringItems.filter(r => r.id !== id);
+      saveLocalSettings();
+      renderRecurringList();
+      showToast('定期支出を削除しました');
+    }
+
+    function renderRecurringList() {
+      const container = document.getElementById('recurring-list');
+      if (!container) return;
+
+      if (recurringItems.length === 0) {
+        container.innerHTML = '<p class="empty-text">登録されている定期支出はありません</p>';
+        return;
+      }
+
+      container.innerHTML = recurringItems.map(item => `
+        <div class="list-item">
+          <div>
+            <div style="font-weight: 700;">${escapeHtml(item.title)}</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              毎月${item.day === '99' ? '月末' : item.day + '日'} | ¥${item.amount.toLocaleString()} | ${getCategoryName(item.category_id)}
+            </div>
+          </div>
+          <button class="btn-sm-del" onclick="deleteRecurringItem('${item.id}')">削除</button>
+        </div>
+      `).join('');
+    }
+
+    function checkAndApplyRecurring() {
+      const today = new Date();
+      const currentYM = today.toISOString().substring(0, 7);
+      const currentDay = today.getDate();
+      const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+      let added = false;
+
+      recurringItems.forEach(item => {
+        if (item.last_applied === currentYM) return;
+
+        let targetDay = parseInt(item.day, 10);
+        if (item.day === '99') targetDay = lastDayOfMonth;
+
+        if (currentDay >= targetDay) {
+          // 定期支出を自動登録
+          const payload = {
+            id: 'auto_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            date: today.toISOString().split('T')[0],
+            amount: item.amount,
+            type: 'expense',
+            category_id: item.category_id,
+            store_id: item.title,
+            memo: '定期自動登録',
+            tags: '固定費'
+          };
+
+          currentTransactions.push(payload);
+          item.last_applied = currentYM;
+          added = true;
+
+          // GAS側へ送信
+          fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ endpoint: '/transactions', method: 'POST', data: payload })
+          }).catch(e => console.error(e));
+        }
+      });
+
+      if (added) {
+        saveLocalSettings();
+        localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(currentTransactions));
+        renderHistoryList();
+        renderSummary();
+      }
+    }
+
+    /* --- 集計機能 --- */
     function setSummaryMode(mode) {
       summaryMode = mode;
       document.getElementById('btn-mode-month').classList.toggle('active', mode === 'month');
@@ -394,13 +659,10 @@
 
     function changeMonth(delta) {
       const input = document.getElementById('summary-month-input');
-      if (!input || !input.value) return;
       let [year, month] = input.value.split('-').map(Number);
-      
       month += delta;
       if (month > 12) { month = 1; year++; }
       if (month < 1) { month = 12; year--; }
-
       const formatted = `${year}-${String(month).padStart(2, '0')}`;
       input.value = formatted;
       selectedMonth = formatted;
@@ -428,7 +690,6 @@
 
     function changeYear(delta) {
       const select = document.getElementById('summary-year-select');
-      if (!select) return;
       const currentIndex = select.selectedIndex;
       const targetIndex = currentIndex - delta;
 
@@ -446,26 +707,28 @@
       if (monthInput && monthInput.value) selectedMonth = monthInput.value;
       if (yearSelect && yearSelect.value) selectedYear = yearSelect.value;
 
-      // 対象データのフィルタリング
       const filtered = currentTransactions.filter(item => {
         if (!item || !item.date) return false;
         const dateStr = String(item.date);
-        if (summaryMode === 'month') {
-          return dateStr.startsWith(selectedMonth);
-        } else {
-          return dateStr.startsWith(selectedYear);
-        }
+        return summaryMode === 'month' ? dateStr.startsWith(selectedMonth) : dateStr.startsWith(selectedYear);
       });
 
-      // 合計の計算
       let totalIncome = 0;
       let totalExpense = 0;
+      let totalAnnualSalary = 0;
       const categoryTotals = {};
+      const ownerSalaryTotals = {};
 
       filtered.forEach(item => {
         const amt = Number(item.amount) || 0;
         if (item.type === 'income') {
           totalIncome += amt;
+          // 年収計算（給与・賞与のみ）
+          if (item.income_kind === 'salary' || item.income_kind === 'bonus' || !item.income_kind) {
+            totalAnnualSalary += amt;
+            const owner = item.owner || '未設定';
+            ownerSalaryTotals[owner] = (ownerSalaryTotals[owner] || 0) + amt;
+          }
         } else if (item.type === 'expense') {
           totalExpense += amt;
           const catName = getCategoryName(item.category_id);
@@ -475,50 +738,145 @@
 
       const balance = totalIncome - totalExpense;
 
-      // サマリーカードの反映
-      const sumIncomeEl = document.getElementById('sum-income');
-      const sumExpenseEl = document.getElementById('sum-expense');
-      const balanceEl = document.getElementById('sum-balance');
+      document.getElementById('sum-income').innerText = `+¥${totalIncome.toLocaleString()}`;
+      document.getElementById('sum-expense').innerText = `-¥${totalExpense.toLocaleString()}`;
+      document.getElementById('sum-balance').innerText = `${balance >= 0 ? '+' : ''}¥${balance.toLocaleString()}`;
+      document.getElementById('sum-annual-salary').innerText = `¥${totalAnnualSalary.toLocaleString()}`;
 
-      if (sumIncomeEl) sumIncomeEl.innerText = `+¥${totalIncome.toLocaleString()}`;
-      if (sumExpenseEl) sumExpenseEl.innerText = `-¥${totalExpense.toLocaleString()}`;
-      
-      if (balanceEl) {
-        balanceEl.innerText = `${balance >= 0 ? '+' : ''}¥${balance.toLocaleString()}`;
-        balanceEl.style.color = balance < 0 ? 'var(--expense)' : 'var(--primary)';
+      // 人別年収内訳
+      const ownerEl = document.getElementById('owner-salary-breakdown');
+      if (ownerEl) {
+        const entries = Object.entries(ownerSalaryTotals);
+        if (entries.length > 0) {
+          ownerEl.innerHTML = '内訳: ' + entries.map(([name, val]) => `${escapeHtml(name)}: ¥${val.toLocaleString()}`).join(' / ');
+        } else {
+          ownerEl.innerText = '※該当期間の給与・賞与データなし';
+        }
       }
 
-      // カテゴリ別内訳の反映
+      // カテゴリ内訳
       const breakdownContainer = document.getElementById('category-breakdown-list');
       if (!breakdownContainer) return;
-      
-      const sortedCategories = Object.entries(categoryTotals)
-        .sort((a, b) => b[1] - a[1]);
+
+      const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
 
       if (sortedCategories.length === 0) {
-        breakdownContainer.innerHTML = '<p class="empty-text">この期間の支出データはありません</p>';
+        breakdownContainer.innerHTML = '<p class="empty-text">支出データがありません</p>';
         return;
       }
 
-      let html = sortedCategories.map(([catName, amount]) => {
+      breakdownContainer.innerHTML = sortedCategories.map(([catName, amount]) => {
         const percent = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
         return `
-          <div class="cat-breakdown-item">
-            <div class="cat-breakdown-header">
+          <div class="breakdown-item">
+            <div class="breakdown-header">
               <span>${escapeHtml(catName)} (${percent}%)</span>
-              <span class="cat-breakdown-amount">¥${amount.toLocaleString()}</span>
+              <span style="color: var(--expense);">¥${amount.toLocaleString()}</span>
             </div>
-            <div class="cat-progress-bg">
-              <div class="cat-progress-fill" style="width: ${percent}%;"></div>
+            <div class="progress-bg">
+              <div class="progress-fill" style="width: ${percent}%;"></div>
             </div>
           </div>
         `;
       }).join('');
-
-      breakdownContainer.innerHTML = html;
     }
 
-    /* --- データ登録・更新・削除処理 --- */
+    /* --- 登録・編集・削除 --- */
+    function startEditTransaction(id) {
+      const item = currentTransactions.find(t => String(t.id) === String(id));
+      if (!item) return;
+
+      editingTransactionId = item.id;
+
+      document.getElementById('input-date').value = item.date;
+      document.getElementById('input-amount').value = item.amount;
+      document.getElementById('input-type').value = item.type || 'expense';
+      toggleIncomeFields();
+
+      if (item.type === 'income') {
+        document.getElementById('input-owner').value = item.owner || '';
+        document.getElementById('input-income-kind').value = item.income_kind || 'salary';
+      }
+
+      document.getElementById('input-category').value = item.category_id;
+      document.getElementById('input-tags').value = item.tags || '';
+      document.getElementById('input-store').value = item.store_id || '';
+      document.getElementById('input-memo').value = item.memo || '';
+
+      document.getElementById('submit-btn').innerText = '変更を保存する';
+      document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+
+      switchTab('input');
+      showToast('編集モードに切り替えました');
+    }
+
+    function resetForm() {
+      editingTransactionId = null;
+      document.getElementById('kakeibo-form').reset();
+      document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
+      toggleIncomeFields();
+
+      document.getElementById('submit-btn').innerText = '登録する';
+      document.getElementById('cancel-edit-btn').style.display = 'none';
+    }
+
+    async function saveTransaction(e) {
+      if (e) e.preventDefault();
+
+      const type = document.getElementById('input-type').value;
+      const owner = document.getElementById('input-owner').value.trim();
+
+      if (type === 'income' && !owner) {
+        alert('収入を入力する場合は「収入者名」が必須です。');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = '送信中...';
+
+      const payload = {
+        endpoint: '/transactions',
+        method: 'POST',
+        data: {
+          id: editingTransactionId,
+          date: document.getElementById('input-date').value,
+          amount: Number(document.getElementById('input-amount').value),
+          type: type,
+          owner: type === 'income' ? owner : '',
+          income_kind: type === 'income' ? document.getElementById('input-income-kind').value : '',
+          category_id: document.getElementById('input-category').value,
+          tags: document.getElementById('input-tags').value.trim(),
+          store_id: document.getElementById('input-store').value,
+          memo: document.getElementById('input-memo').value
+        }
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          showToast(editingTransactionId ? '更新しました' : '登録しました');
+          resetForm();
+          await fetchTransactions();
+          switchTab('history');
+        } else {
+          alert('エラーが発生しました');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('通信エラーが発生しました');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = editingTransactionId ? '変更を保存する' : '登録する';
+      }
+    }
+
     async function deleteTransaction(id) {
       if (!confirm('この明細を削除してもよろしいですか？')) return;
 
@@ -546,95 +904,6 @@
       }
     }
 
-    function startEditTransaction(id) {
-      const item = currentTransactions.find(t => String(t.id) === String(id));
-      if (!item) return;
-
-      editingTransactionId = item.id;
-
-      if (document.getElementById('input-date')) document.getElementById('input-date').value = item.date;
-      if (document.getElementById('input-amount')) document.getElementById('input-amount').value = item.amount;
-      if (document.getElementById('input-type')) document.getElementById('input-type').value = item.type;
-      if (document.getElementById('input-category')) document.getElementById('input-category').value = item.category_id;
-      if (document.getElementById('input-store')) document.getElementById('input-store').value = item.store_id || '';
-      if (document.getElementById('input-memo')) document.getElementById('input-memo').value = item.memo || '';
-
-      const submitBtn = document.getElementById('submit-btn');
-      if (submitBtn) submitBtn.innerText = '✏️ 変更を保存する';
-
-      const cancelBtn = document.getElementById('cancel-edit-btn');
-      if (cancelBtn) cancelBtn.style.display = 'inline-block';
-
-      switchTab('input');
-      showToast('編集モードに切り替えました');
-    }
-
-    function resetForm() {
-      editingTransactionId = null;
-      const form = document.getElementById('kakeibo-form');
-      if (form) form.reset();
-
-      const today = new Date().toISOString().split('T')[0];
-      const dateInput = document.getElementById('input-date');
-      if (dateInput) dateInput.value = today;
-
-      const submitBtn = document.getElementById('submit-btn');
-      if (submitBtn) submitBtn.innerText = '登録する';
-
-      const cancelBtn = document.getElementById('cancel-edit-btn');
-      if (cancelBtn) cancelBtn.style.display = 'none';
-    }
-
-    async function saveTransaction(e) {
-      if (e) e.preventDefault();
-
-      const submitBtn = document.getElementById('submit-btn');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerText = '送信中...';
-      }
-
-      const payload = {
-        endpoint: '/transactions',
-        method: 'POST',
-        data: {
-          id: editingTransactionId,
-          date: document.getElementById('input-date').value,
-          amount: Number(document.getElementById('input-amount').value),
-          type: document.getElementById('input-type').value,
-          category_id: document.getElementById('input-category').value,
-          store_id: document.getElementById('input-store') ? document.getElementById('input-store').value : '',
-          memo: document.getElementById('input-memo') ? document.getElementById('input-memo').value : ''
-        }
-      };
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json();
-        if (json.success) {
-          showToast(editingTransactionId ? '更新しました！' : '登録しました！');
-          resetForm();
-          await fetchTransactions();
-          switchTab('history');
-        } else {
-          alert('エラーが発生しました: ' + (json.error ? json.error.message : ''));
-        }
-      } catch (err) {
-        console.error(err);
-        alert('通信エラーが発生しました');
-      } finally {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerText = editingTransactionId ? '✏️ 変更を保存する' : '登録する';
-        }
-      }
-    }
-
     function escapeHtml(str) {
       if (!str) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -648,7 +917,7 @@
         toast.style.cssText = `
           position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
           background: rgba(15, 23, 42, 0.9); color: #fff; padding: 10px 20px;
-          border-radius: 20px; font-size: 0.85rem; font-weight: bold; z-index: 9999;
+          border-radius: 20px; font-size: 0.85rem; font-weight: 600; z-index: 9999;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: opacity 0.3s;
         `;
         document.body.appendChild(toast);
