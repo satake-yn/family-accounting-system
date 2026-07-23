@@ -45,7 +45,7 @@
     
     .history-item { background: var(--card-bg); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .history-left { display: flex; flex-direction: column; gap: 4px; }
-    .history-category { font-size: 0.9rem; font-weight: bold; color: var(--primary); }
+    .history-category { font-size: 0.95rem; font-weight: bold; color: #1e293b; }
     .history-sub { font-size: 0.75rem; color: var(--text-muted); }
     .history-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .history-amount { font-size: 1.1rem; font-weight: bold; }
@@ -232,13 +232,22 @@
       const visibleItems = reversed.slice(0, displayLimit);
 
       let html = visibleItems.map(item => {
-        const catName = categoryMap[item.category_id] || item.category_id || '未分類';
+        // IDをカテゴリ名に変換。英数字のUUIDっぽい場合は「未分類」にする
+        let catName = categoryMap[item.category_id];
+        if (!catName) {
+          catName = (item.category_id && !item.category_id.includes('-')) ? item.category_id : '未分類';
+        }
+
+        // タイトル作成: 「カテゴリ名 (店舗名)」 または 「カテゴリ名」
+        const titleText = item.store_id 
+          ? `${escapeHtml(catName)} (${escapeHtml(item.store_id)})`
+          : escapeHtml(catName);
 
         return `
           <div class="history-item">
             <div class="history-left">
-              <span class="history-category">${escapeHtml(catName)}</span>
-              <span class="history-sub">${escapeHtml(item.date)} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
+              <span class="history-category">${titleText}</span>
+              <span class="history-sub">📅 ${escapeHtml(item.date)}</span>
               ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
             </div>
             <div class="history-right">
