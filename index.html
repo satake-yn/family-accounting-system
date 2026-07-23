@@ -292,6 +292,32 @@
   padding: 24px 0;
   font-size: 0.9rem;
 }
+    .action-btns {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.edit-btn {
+  background: #eff6ff;
+  color: #2563eb;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.more-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+}
   </style>
 </head>
 <body>
@@ -691,6 +717,24 @@ function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+async function saveTransaction() {
+  // フォームデータ読み取り...
+  const data = {
+    id: window.editingTransactionId || null, // 編集時はIDが入る
+    date: document.getElementById('input-date').value,
+    amount: Number(document.getElementById('input-amount').value),
+    type: document.getElementById('input-type').value,
+    category_id: document.getElementById('input-category').value,
+    // ...その他フィールド
+  };
+
+  // 送信処理（fetch）...
+  // 保存成功したら editingTransactionId をクリアし、ボタン表記を元に戻す
+  window.editingTransactionId = null;
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) submitBtn.innerText = '登録する';
+}
+    
   </script>
 </body>
 </html>
