@@ -213,6 +213,85 @@
     }
 
     .hidden { display: none; }
+    /* 履歴画面のスタイル */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.refresh-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.history-item {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-category {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.history-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.history-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.history-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.history-amount.expense { color: var(--expense); }
+.history-amount.income { color: var(--income); }
+
+.delete-btn {
+  background: #fef2f2;
+  color: #ef4444;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.loading-text, .empty-text {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px 0;
+  font-size: 0.9rem;
+}
   </style>
 </head>
 <body>
@@ -285,12 +364,17 @@
   </main>
 
   <!-- ② 履歴画面（後ほど拡張） -->
-  <section id="tab-history" class="tab-content hidden">
-    <div class="card">
-      <h3>直近の履歴</h3>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">データ読み込み機能は次のステップで連携します。</p>
-    </div>
-  </section>
+  <!-- ② 履歴画面 -->
+<section id="tab-history" class="tab-content hidden">
+  <div class="history-header">
+    <h3>直近30件の履歴</h3>
+    <button type="button" class="refresh-btn" onclick="fetchTransactions()">🔄 更新</button>
+  </div>
+  
+  <div id="history-list" class="history-list">
+    <p class="loading-text">読み込み中...</p>
+  </div>
+</section>
 
   <!-- ③ 集計画面（後ほど拡張） -->
   <section id="tab-summary" class="tab-content hidden">
@@ -433,6 +517,90 @@ if ('serviceWorker' in navigator) {
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2500);
     }
+    // switchTab関数を一部修正（履歴タブが開かれたら自動取得）
+function switchTab(tabName) {
+  document.querySelectorAll('.nav-tab').forEach((tab, index) => {
+    const names = ['input', 'history', 'summary'];
+    tab.classList.toggle('active', names[index] === tabName);
+  });
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+  document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+  // 履歴タブが開かれたら自動でデータ取得
+  if (tabName === 'history') {
+    fetchTransactions();
+  }
+}
+
+// 履歴データを取得して表示
+async function fetchTransactions() {
+  const container = document.getElementById('history-list');
+  container.innerHTML = '<p class="loading-text">読み込み中...</p>';
+
+  try {
+    const res = await fetch(`${API_URL}?endpoint=/transactions`);
+    const json = await res.json();
+
+    if (json.success && json.data && json.data.length > 0) {
+      // 直近順（新しい順）に並び替え
+      const list = json.data.reverse();
+      container.innerHTML = list.map(item => `
+        <div class="history-item">
+          <div class="history-left">
+            <span class="history-category">${escapeHtml(item.category_name || item.category_id)}</span>
+            <span class="history-sub">${item.date} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
+            ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
+          </div>
+          <div class="history-right">
+            <span class="history-amount ${item.type}">
+              ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
+            </span>
+            <button class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<p class="empty-text">まだ履歴がありません</p>';
+    }
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<p class="empty-text">データの取得に失敗しました</p>';
+  }
+}
+
+// 履歴の削除処理
+async function deleteTransaction(id) {
+  if (!confirm('この明細を削除してもよろしいですか？')) return;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        endpoint: '/transactions/delete',
+        method: 'POST',
+        data: { id: id }
+      })
+    });
+
+    const json = await res.json();
+    if (json.success) {
+      showToast('削除しました');
+      fetchTransactions(); // 一覧を再取得
+    } else {
+      alert('削除に失敗しました');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('通信エラーが発生しました');
+  }
+}
+
+// エスケープ処理（安全策）
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
   </script>
 </body>
 </html>
