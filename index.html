@@ -21,14 +21,14 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text-main); padding-top: 12px; padding-bottom: 90px; }
+    body { background: var(--bg); color: var(--text-main); padding-top: 12px; padding-bottom: 110px; }
 
     .container { max-width: 520px; margin: 0 auto; padding: 16px; }
 
-    /* ナビゲーション */
-    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; border-top: 1px solid var(--border); z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
-    .nav-tab { flex: 1; padding: 14px 0; text-align: center; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); background: none; border: none; cursor: pointer; border-top: 3px solid transparent; transition: all 0.2s; }
-    .nav-tab.active { color: var(--primary); border-top-color: var(--primary); font-weight: 700; background: #f8fafc; }
+    /* ナビゲーション（常時表示＆大型化） */
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; border-top: 2px solid var(--border); z-index: 1000; box-shadow: 0 -4px 15px rgba(0,0,0,0.08); }
+    .nav-tab { flex: 1; padding: 18px 0; text-align: center; font-size: 0.9rem; font-weight: 700; color: var(--text-muted); background: none; border: none; cursor: pointer; border-top: 4px solid transparent; transition: all 0.2s; }
+    .nav-tab.active { color: var(--primary); border-top-color: var(--primary); background: #f8fafc; }
 
     /* 共通フォーム */
     .tab-content.hidden { display: none; }
@@ -44,7 +44,7 @@
     /* 履歴リスト */
     .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .history-header h3 { font-size: 1rem; color: var(--primary); }
-    .refresh-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+    .refresh-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
     
     .history-card { background: var(--card-bg); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
     .history-main { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
@@ -114,7 +114,7 @@
           </select>
         </div>
 
-        <!-- 収入時のみ表示する必須フィールド（雄太・奈緒美の選択肢） -->
+        <!-- 収入時のみ表示する必須フィールド -->
         <div id="income-fields" class="form-group hidden" style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 16px;">
           <div class="form-group" style="margin-bottom: 0;">
             <label for="input-owner">収入者名（必須）</label>
@@ -287,7 +287,6 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzGtcPmOlCCsFjdtVBIzxg5Q6rgvgNAtLe2K6JlDJdCVGSe0ZZ7og6_8f3WHvPLD-Letg/exec";
 
-    // 標準カテゴリセット
     const DEFAULT_CATEGORIES = [
       { id: 'cat_salary', name: '給与', type: 'income' },
       { id: 'cat_bonus', name: '賞与', type: 'income' },
@@ -389,7 +388,6 @@
       rebuildCategoryMap();
     }
 
-    /* --- カテゴリ表示ロジック強化 --- */
     function getCategoryName(catId) {
       if (!catId) return '未分類';
       const idStr = String(catId).trim();
@@ -409,11 +407,12 @@
 
     async function fetchCategories() {
       try {
-        const res = await fetch(`${API_URL}?endpoint=/categories`);
-        const json = await res.json();
+        const res = an => fetch(`${API_URL}?endpoint=/categories`);
+        const resObj = await fetch(`${API_URL}?endpoint=/categories`);
+        const json = await resObj.json();
         if (json.success && json.data && json.data.length > 0) {
           json.data.forEach(c => {
-            const exists = categoryTypeList.find(existing => String(existing.id) === String(c.id));
+            const exists = categoryTypeList.find(existing => String(existing.id) === String(c.id) || existing.name === c.name);
             if (!exists) {
               categoryTypeList.push({ id: String(c.id), name: c.name, type: 'expense' });
             }
@@ -454,7 +453,7 @@
     }
 
     function deleteCategory(id) {
-      categoryTypeList = categoryTypeList.filter(c => c.id !== id);
+      categoryTypeList = categoryTypeList.filter(c => String(c.id) !== String(id));
       saveLocalSettings();
       updateCategoryDropdown();
       renderCategorySettingsList();
@@ -481,11 +480,14 @@
       `).join('');
     }
 
-    /* --- 即時画面反映・バックグラウンド取得 --- */
     async function fetchTransactionsSilently(showNotice = false) {
       if (showNotice) showToast('最新情報を読み込んでいます...');
       try {
-        const res = await fetch(`${API_URL}?endpoint=/transactions`);
+        const res = await fetch(`${API_URL}?endpoint=/transactions`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
+        });
         const json = await res.json();
         if (json.success && json.data) {
           currentTransactions = json.data;
@@ -497,6 +499,7 @@
         }
       } catch (err) {
         console.error('履歴取得エラー:', err);
+        if (showNotice) showToast('通信エラーが発生しました');
       }
     }
 
@@ -554,7 +557,6 @@
       container.innerHTML = html;
     }
 
-    /* --- 定期支出 --- */
     function addRecurringItem(e) {
       e.preventDefault();
       const title = document.getElementById('rec-title').value.trim();
@@ -656,7 +658,6 @@
       }
     }
 
-    /* --- 集計 --- */
     function setSummaryMode(mode) {
       summaryMode = mode;
       document.getElementById('btn-mode-year').classList.toggle('active', mode === 'year');
@@ -787,7 +788,6 @@
       }
     }
 
-    /* --- 登録・編集・削除 --- */
     async function saveTransaction(e) {
       e.preventDefault();
       const submitBtn = document.getElementById('submit-btn');
@@ -917,7 +917,7 @@
         toast = document.createElement('div');
         toast.id = 'toast-notification';
         toast.style.cssText = `
-          position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+          position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%);
           background: rgba(15, 23, 42, 0.9); color: white; padding: 10px 20px;
           border-radius: 20px; font-size: 0.85rem; z-index: 1000;
           transition: opacity 0.3s; opacity: 0; pointer-events: none;
