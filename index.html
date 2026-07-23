@@ -334,60 +334,50 @@
   </nav>
 
   <!-- ① 入力画面 -->
-  <main id="tab-input" class="tab-content">
-    <div class="card">
-      <form id="transaction-form" onsubmit="handleSubmit(event)">
-        <!-- 収支切替 -->
-        <div class="type-toggle">
-          <button type="button" class="type-btn active" data-type="expense" onclick="setType('expense')">支出</button>
-          <button type="button" class="type-btn" data-type="income" onclick="setType('income')">収入</button>
-        </div>
-
-        <!-- 日付 -->
-        <div class="form-group">
-          <label for="date">日付</label>
-          <input type="date" id="date" required>
-        </div>
-
-        <!-- 金額 -->
-        <div class="form-group">
-          <label for="amount">金額 (税込)</label>
-          <div class="amount-input-wrap">
-            <span>¥</span>
-            <input type="number" id="amount" inputmode="numeric" pattern="[0-9]*" placeholder="0" required min="1">
-          </div>
-        </div>
-
-        <!-- カテゴリ -->
-        <div class="form-group">
-          <label for="category_id">カテゴリ</label>
-          <select id="category_id" required>
-            <option value="">読み込み中...</option>
-          </select>
-        </div>
-
-        <!-- 店舗 -->
-        <div class="form-group">
-          <label for="store_id">店舗 (任意)</label>
-          <input type="text" id="store_id" placeholder="例: オーケー, セブンイレブン">
-        </div>
-
-        <!-- タグ -->
-        <div class="form-group">
-          <label for="tags">タグ (任意)</label>
-          <input type="text" id="tags" placeholder="例: 旅行, 外食 (カンマ区切り)">
-        </div>
-
-        <!-- メモ -->
-        <div class="form-group">
-          <label for="memo">メモ (任意)</label>
-          <textarea id="memo" rows="2" placeholder="備考があれば入力"></textarea>
-        </div>
-
-        <button type="submit" id="submit-btn" class="submit-btn">登録する</button>
-      </form>
+  <!-- 入力タブ -->
+<div id="tab-input" class="tab-content">
+  <form id="kakeibo-form" onsubmit="saveTransaction(event)">
+    <div class="form-group">
+      <label for="input-date">日付</label>
+      <input type="date" id="input-date" required>
     </div>
-  </main>
+
+    <div class="form-group">
+      <label for="input-type">収支区分</label>
+      <select id="input-type">
+        <option value="expense">支出</option>
+        <option value="income">収入</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="input-amount">金額</label>
+      <input type="number" id="input-amount" placeholder="1000" required>
+    </div>
+
+    <div class="form-group">
+      <label for="input-category">カテゴリ</label>
+      <select id="input-category">
+        <!-- JavaScriptで自動読み込みされます -->
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="input-store">店舗名・利用先（任意）</label>
+      <input type="text" id="input-store" placeholder="例: セブンイレブン">
+    </div>
+
+    <div class="form-group">
+      <label for="input-memo">メモ（任意）</label>
+      <input type="text" id="input-memo" placeholder="例: お弁当代">
+    </div>
+
+    <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+      <button type="submit" id="submit-btn" class="primary-btn">登録する</button>
+      <button type="button" id="cancel-edit-btn" class="secondary-btn" onclick="resetForm()" style="display: none;">キャンセル</button>
+    </div>
+  </form>
+</div>
 
   <!-- ② 履歴画面（後ほど拡張） -->
   <!-- ② 履歴画面 -->
@@ -412,214 +402,166 @@
 
   <!-- トースト通知 -->
   <div id="toast" class="toast">登録が完了しました！</div>
+  
+   <script>
+// ==========================================
+// 1. 基本設定（GASのAPI URL）
+// ==========================================
+const API_URL = "https://script.google.com/macros/s/AKfycbzGtcPmOlCCsFjdtVBIzxg5Q6rgvgNAtLe2K6JlDJdCVGSe0ZZ7og6_8f3WHvPLD-Letg/exec";
 
-  <script>
-    // -------------------------------------------------------------
-    // ⚠️ 設定：デプロイしたGASのウェブアプリURLをここに貼り付けてください
-    // -------------------------------------------------------------
-    const API_URL = "https://script.google.com/macros/s/AKfycbzGtcPmOlCCsFjdtVBIzxg5Q6rgvgNAtLe2K6JlDJdCVGSe0ZZ7og6_8f3WHvPLD-Letg/exec";
+// ==========================================
+// 2. グローバル変数
+// ==========================================
+let categoryMap = {};          // ID -> カテゴリ名変換マップ
+let currentTransactions = []; // 全履歴データ
+let displayLimit = 30;        // 初期表示件数
+let editingTransactionId = null; // 編集中のID (nullなら新規登録)
 
-    let currentType = 'expense';
-
-    // 初期化処理
-    document.addEventListener('DOMContentLoaded', () => {
-      // 本日の日付をデフォルト設定
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('date').value = today;
-
-      // カテゴリ読み込み
-      fetchCategories();
-    });
-
-    // 収支切り替え
-    function setType(type) {
-      currentType = type;
-      document.querySelectorAll('.type-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.type === type);
-      });
-    }
-
-    // タブ切り替え
-    function switchTab(tabName) {
-      document.querySelectorAll('.nav-tab').forEach((tab, index) => {
-        const names = ['input', 'history', 'summary'];
-        tab.classList.toggle('active', names[index] === tabName);
-      });
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-    }
-
-    // カテゴリ一覧を取得
-    let categoryMap = {}; // グローバルに保持
-
-async function fetchCategories() {
-  try {
-    const res = await fetch(`${API_URL}?endpoint=/categories`);
-    const json = await res.json();
-    if (json.success && json.data) {
-      // ID -> 名前 の辞書(Map)を作成
-      json.data.forEach(cat => {
-        categoryMap[cat.id] = cat.name;
-      });
-      // 画面のカテゴリ選択UIなどを描画する処理...
-    }
-  } catch (err) {
-    console.error('カテゴリ取得エラー:', err);
+// ==========================================
+// 3. 画面読み込み時の初期化処理
+// ==========================================
+window.addEventListener('DOMContentLoaded', async () => {
+  // Service Worker (PWA) の登録
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW Error:', err));
   }
-}
 
-    // フォーム送信処理
-    async function handleSubmit(e) {
-      e.preventDefault();
-      
-      const submitBtn = document.getElementById('submit-btn');
-      submitBtn.disabled = true;
-      submitBtn.textContent = '送信中...';
+  // 今日の日付を初期値としてセット
+  const today = new Date().toISOString().split('T')[0];
+  const dateInput = document.getElementById('input-date');
+  if (dateInput) dateInput.value = today;
 
-      const tagsInput = document.getElementById('tags').value;
-      const tagsArray = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : [];
+  // まずカテゴリを取得してマップを作成、そのあと履歴を取得
+  await fetchCategories();
+  await fetchTransactions();
+});
 
-      const payload = {
-        endpoint: '/transactions',
-        method: 'POST',
-        data: {
-          type: currentType,
-          date: document.getElementById('date').value,
-          amount: Number(document.getElementById('amount').value),
-          category_id: document.getElementById('category_id').value,
-          store_id: document.getElementById('store_id').value,
-          tags: tagsArray,
-          memo: document.getElementById('memo').value
-        }
-      };
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' }, // GAS受け取り用
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json();
-
-        if (json.success) {
-          showToast('保存しました！');
-          // 金額・店舗・メモのみクリア（日付とカテゴリはまとめ入力を考慮して保持）
-          document.getElementById('amount').value = '';
-          document.getElementById('store_id').value = '';
-          document.getElementById('memo').value = '';
-        } else {
-          alert('エラー: ' + (json.error?.message || '登録に失敗しました'));
-        }
-      } catch (err) {
-        console.error(err);
-        alert('通信エラーが発生しました');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = '登録する (30秒入力)';
-      }
-    }
-
-    // Service Workerの登録
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js');
-  });
-}
-    // トースト表示
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2500);
-    }
-    // switchTab関数を一部修正（履歴タブが開かれたら自動取得）
+// ==========================================
+// 4. タブ切り替え処理
+// ==========================================
 function switchTab(tabName) {
   document.querySelectorAll('.nav-tab').forEach((tab, index) => {
     const names = ['input', 'history', 'summary'];
     tab.classList.toggle('active', names[index] === tabName);
   });
+  
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-  document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+  const target = document.getElementById(`tab-${tabName}`);
+  if (target) target.classList.remove('hidden');
 
-  // 履歴タブが開かれたら自動でデータ取得
   if (tabName === 'history') {
     fetchTransactions();
   }
 }
 
-// 履歴データを取得して表示
-let currentTransactions = []; // 全履歴を保持
-let displayLimit = 30;         // 初期表示件数
+// ==========================================
+// 5. カテゴリ一覧取得＆マップ作成
+// ==========================================
+async function fetchCategories() {
+  try {
+    const res = await fetch(`${API_URL}?endpoint=/categories`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      categoryMap = {};
+      json.data.forEach(cat => {
+        categoryMap[cat.id] = cat.name;
+      });
 
+      // 選択肢（セレクトボックス）の更新
+      const select = document.getElementById('input-category');
+      if (select) {
+        select.innerHTML = json.data.map(c => 
+          `<option value="${c.id}">${escapeHtml(c.name)}</option>`
+        ).join('');
+      }
+
+      // 履歴がすでに読み込まれていれば日本語表示に更新
+      if (currentTransactions.length > 0) {
+        renderHistoryList();
+      }
+    }
+  } catch (err) {
+    console.error('カテゴリ取得失敗:', err);
+  }
+}
+
+// ==========================================
+// 6. 履歴一覧取得・キャッシュ・描画
+// ==========================================
 async function fetchTransactions() {
   const container = document.getElementById('history-list');
 
-  // キャッシュがあれば表示
-  const cachedData = localStorage.getItem('kakeibo_transactions_cache');
-  if (cachedData) {
-    currentTransactions = JSON.parse(cachedData);
-    renderHistoryList();
-  } else {
+  // キャッシュがあれば即時表示
+  const cached = localStorage.getItem('kakeibo_transactions_cache');
+  if (cached) {
+    try {
+      currentTransactions = JSON.parse(cached);
+      renderHistoryList();
+    } catch (e) {
+      console.error(e);
+    }
+  } else if (container) {
     container.innerHTML = '<p class="loading-text">読み込み中...</p>';
   }
 
   try {
     const res = await fetch(`${API_URL}?endpoint=/transactions`);
     const json = await res.json();
-
     if (json.success && json.data) {
       currentTransactions = json.data;
       localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(json.data));
       renderHistoryList();
     }
   } catch (err) {
-    console.error(err);
+    console.error('履歴取得失敗:', err);
+    if (!cached && container) {
+      container.innerHTML = '<p class="empty-text">データの読み込みに失敗しました</p>';
+    }
   }
 }
 
-// 履歴一覧を描画する関数
 function renderHistoryList() {
   const container = document.getElementById('history-list');
+  if (!container) return;
+
   if (!currentTransactions || currentTransactions.length === 0) {
     container.innerHTML = '<p class="empty-text">まだ履歴がありません</p>';
     return;
   }
 
-  // 新しい順（降順）に並び替え
+  // 新しい順（降順）
   const reversed = [...currentTransactions].reverse();
-  // 表示件数分だけ切り出し
   const visibleItems = reversed.slice(0, displayLimit);
 
   let html = visibleItems.map(item => {
-    // UUIDではなくカテゴリ名に変換（見つからなければそのまま表示）
+    // IDを日本語カテゴリ名に変換
     const catName = categoryMap[item.category_id] || item.category_id || '未分類';
 
     return `
       <div class="history-item">
         <div class="history-left">
           <span class="history-category">${escapeHtml(catName)}</span>
-          <span class="history-sub">${item.date} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
+          <span class="history-sub">${escapeHtml(item.date)} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
           ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
         </div>
         <div class="history-right">
           <span class="history-amount ${item.type}">
             ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
           </span>
-          <div class="action-btns">
-            <button class="edit-btn" onclick="startEditTransaction('${item.id}')">編集</button>
-            <button class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
+          <div class="action-btns" style="margin-top: 6px; display: flex; gap: 4px; justify-content: flex-end;">
+            <button type="button" class="edit-btn" onclick="startEditTransaction('${item.id}')">編集</button>
+            <button type="button" class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
           </div>
         </div>
       </div>
     `;
   }).join('');
 
-  // 30件以上残っている場合は「もっと見る」ボタンを追加
+  // 30件以上残っている場合の「もっと見る」ボタン
   if (reversed.length > displayLimit) {
     html += `
-      <div class="more-btn-container" style="text-align: center; margin: 20px 0;">
-        <button class="more-btn" onclick="loadMoreHistory()">さらに表示する (${displayLimit} / ${reversed.length}件)</button>
+      <div style="text-align: center; margin: 20px 0;">
+        <button type="button" class="more-btn" onclick="loadMoreHistory()">さらに表示する (${displayLimit} / ${reversed.length}件)</button>
       </div>
     `;
   }
@@ -627,64 +569,14 @@ function renderHistoryList() {
   container.innerHTML = html;
 }
 
-// 件数を増やす関数
 function loadMoreHistory() {
   displayLimit += 30;
   renderHistoryList();
 }
 
-// 明細の編集を開始する関数
-function startEditTransaction(id) {
-  const item = currentTransactions.find(t => String(t.id) === String(id));
-  if (!item) return;
-
-  // 入力フォームの各要素にデータをセット
-  document.getElementById('input-date').value = item.date;
-  document.getElementById('input-amount').value = item.amount;
-  document.getElementById('input-type').value = item.type;
-  document.getElementById('input-category').value = item.category_id;
-  if (document.getElementById('input-store')) document.getElementById('input-store').value = item.store_id || '';
-  if (document.getElementById('input-memo')) document.getElementById('input-memo').value = item.memo || '';
-
-  // 編集モード用のIDをフォームに隠し文字などで保持（またはグローバル変数へ）
-  window.editingTransactionId = item.id;
-
-  // ボタンの表示を「更新する」に変更
-  const submitBtn = document.getElementById('submit-btn');
-  if (submitBtn) submitBtn.innerText = '✏️ 明細を更新する';
-
-  // 入力タブへ自動切替
-  switchTab('input');
-  showToast('編集モードになりました');
-}
-
-// 描画用の共通処理
-function renderHistoryList(data) {
-  const container = document.getElementById('history-list');
-  if (!data || data.length === 0) {
-    container.innerHTML = '<p class="empty-text">まだ履歴がありません</p>';
-    return;
-  }
-
-  const list = [...data].reverse();
-  container.innerHTML = list.map(item => `
-    <div class="history-item">
-      <div class="history-left">
-        <span class="history-category">${escapeHtml(item.category_id)}</span>
-        <span class="history-sub">${item.date} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
-        ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
-      </div>
-      <div class="history-right">
-        <span class="history-amount ${item.type}">
-          ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
-        </span>
-        <button class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-// 履歴の削除処理
+// ==========================================
+// 7. 明細削除機能
+// ==========================================
 async function deleteTransaction(id) {
   if (!confirm('この明細を削除してもよろしいですか？')) return;
 
@@ -702,9 +594,9 @@ async function deleteTransaction(id) {
     const json = await res.json();
     if (json.success) {
       showToast('削除しました');
-      fetchTransactions(); // 一覧を再取得
+      await fetchTransactions();
     } else {
-      alert('削除に失敗しました');
+      alert('削除に失敗しました: ' + (json.error ? json.error.message : ''));
     }
   } catch (err) {
     console.error(err);
@@ -712,29 +604,129 @@ async function deleteTransaction(id) {
   }
 }
 
-// エスケープ処理（安全策）
+// ==========================================
+// 8. 編集モード開始 & リセット
+// ==========================================
+function startEditTransaction(id) {
+  const item = currentTransactions.find(t => String(t.id) === String(id));
+  if (!item) return;
+
+  editingTransactionId = item.id;
+
+  if (document.getElementById('input-date')) document.getElementById('input-date').value = item.date;
+  if (document.getElementById('input-amount')) document.getElementById('input-amount').value = item.amount;
+  if (document.getElementById('input-type')) document.getElementById('input-type').value = item.type;
+  if (document.getElementById('input-category')) document.getElementById('input-category').value = item.category_id;
+  if (document.getElementById('input-store')) document.getElementById('input-store').value = item.store_id || '';
+  if (document.getElementById('input-memo')) document.getElementById('input-memo').value = item.memo || '';
+
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) submitBtn.innerText = '✏️ 変更を保存する';
+
+  const cancelBtn = document.getElementById('cancel-edit-btn');
+  if (cancelBtn) cancelBtn.style.display = 'inline-block';
+
+  switchTab('input');
+  showToast('編集モードに切り替えました');
+}
+
+function resetForm() {
+  editingTransactionId = null;
+  const form = document.getElementById('kakeibo-form');
+  if (form) form.reset();
+
+  const today = new Date().toISOString().split('T')[0];
+  const dateInput = document.getElementById('input-date');
+  if (dateInput) dateInput.value = today;
+
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) submitBtn.innerText = '登録する';
+
+  const cancelBtn = document.getElementById('cancel-edit-btn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+// ==========================================
+// 9. データ保存（新規登録 / 編集更新）
+// ==========================================
+async function saveTransaction(e) {
+  if (e) e.preventDefault();
+
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = '送信中...';
+  }
+
+  const payload = {
+    endpoint: '/transactions',
+    method: 'POST',
+    data: {
+      id: editingTransactionId,
+      date: document.getElementById('input-date').value,
+      amount: Number(document.getElementById('input-amount').value),
+      type: document.getElementById('input-type').value,
+      category_id: document.getElementById('input-category').value,
+      store_id: document.getElementById('input-store') ? document.getElementById('input-store').value : '',
+      memo: document.getElementById('input-memo') ? document.getElementById('input-memo').value : ''
+    }
+  };
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+    if (json.success) {
+      showToast(editingTransactionId ? '更新しました！' : '登録しました！');
+      resetForm();
+      await fetchTransactions();
+      switchTab('history');
+    } else {
+      alert('エラーが発生しました: ' + (json.error ? json.error.message : ''));
+    }
+  } catch (err) {
+    console.error(err);
+    alert('通信エラーが発生しました');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = editingTransactionId ? '✏️ 変更を保存する' : '登録する';
+    }
+  }
+}
+
+// ==========================================
+// 10. ユーティリティ（文字エスケープ & トースト表示）
+// ==========================================
 function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-async function saveTransaction() {
-  // フォームデータ読み取り...
-  const data = {
-    id: window.editingTransactionId || null, // 編集時はIDが入る
-    date: document.getElementById('input-date').value,
-    amount: Number(document.getElementById('input-amount').value),
-    type: document.getElementById('input-type').value,
-    category_id: document.getElementById('input-category').value,
-    // ...その他フィールド
-  };
 
-  // 送信処理（fetch）...
-  // 保存成功したら editingTransactionId をクリアし、ボタン表記を元に戻す
-  window.editingTransactionId = null;
-  const submitBtn = document.getElementById('submit-btn');
-  if (submitBtn) submitBtn.innerText = '登録する';
+function showToast(message) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = `
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9); color: #fff; padding: 10px 20px;
+      border-radius: 20px; font-size: 0.85rem; font-weight: 600; z-index: 9999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: opacity 0.3s;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.innerText = message;
+  toast.style.opacity = '1';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+  }, 2500);
 }
-    
-  </script>
+</script>
+
 </body>
 </html>
