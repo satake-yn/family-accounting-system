@@ -6,6 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>家計簿</title>
+  <!-- PWA & iOS 専用設定 -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#2563eb">
   <style>
     :root {
       --primary: #2563eb;
@@ -276,7 +280,7 @@
           <textarea id="memo" rows="2" placeholder="備考があれば入力"></textarea>
         </div>
 
-        <button type="submit" id="submit-btn" class="submit-btn">登録する (30秒入力)</button>
+        <button type="submit" id="submit-btn" class="submit-btn">登録する</button>
       </form>
     </div>
   </main>
@@ -416,6 +420,17 @@
         submitBtn.textContent = '登録する (30秒入力)';
       }
     }
+
+    // Service Workerの登録
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+      console.log('Service Worker 登録完了');
+    }).catch((err) => {
+      console.error('Service Worker 登録失敗:', err);
+    });
+  });
+}
 
     // トースト表示
     function showToast(msg) {
