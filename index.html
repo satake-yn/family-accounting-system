@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>家計簿</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --expense: #ef4444;
+      --income: #10b981;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ナビゲーションタブ */
+    .nav-tabs {
+      display: flex;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+    }
+
+    .nav-tab {
+      flex: 1;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-tab.active {
+      background: var(--card-bg);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* カードコンテナ */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+    }
+
+    /* 収支切り替えトグル */
+    .type-toggle {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .type-btn.active[data-type="expense"] {
+      border-color: var(--expense);
+      background-color: #fef2f2;
+      color: var(--expense);
+    }
+
+    .type-btn.active[data-type="income"] {
+      border-color: var(--income);
+      background-color: #ecfdf5;
+      color: var(--income);
+    }
+
+    /* フォームグループ */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      color: var(--text);
+      background: #fff;
+      appearance: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* 金額入力専用 */
+    .amount-input-wrap {
+      position: relative;
+    }
+
+    .amount-input-wrap span {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .amount-input-wrap input {
+      padding-left: 32px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* 送信ボタン */
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    .submit-btn:disabled {
+      background: #94a3b8;
+    }
+
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>家計簿アプリ</h1>
+  </header>
+
+  <!-- タブ切り替え -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('input')">入力</button>
+    <button class="nav-tab" onclick="switchTab('history')">履歴</button>
+    <button class="nav-tab" onclick="switchTab('summary')">集計</button>
+  </nav>
+
+  <!-- ① 入力画面 -->
+  <main id="tab-input" class="tab-content">
+    <div class="card">
+      <form id="transaction-form" onsubmit="handleSubmit(event)">
+        <!-- 収支切替 -->
+        <div class="type-toggle">
+          <button type="button" class="type-btn active" data-type="expense" onclick="setType('expense')">支出</button>
+          <button type="button" class="type-btn" data-type="income" onclick="setType('income')">収入</button>
+        </div>
+
+        <!-- 日付 -->
+        <div class="form-group">
+          <label for="date">日付</label>
+          <input type="date" id="date" required>
+        </div>
+
+        <!-- 金額 -->
+        <div class="form-group">
+          <label for="amount">金額 (税込)</label>
+          <div class="amount-input-wrap">
+            <span>¥</span>
+            <input type="number" id="amount" inputmode="numeric" pattern="[0-9]*" placeholder="0" required min="1">
+          </div>
+        </div>
+
+        <!-- カテゴリ -->
+        <div class="form-group">
+          <label for="category_id">カテゴリ</label>
+          <select id="category_id" required>
+            <option value="">読み込み中...</option>
+          </select>
+        </div>
+
+        <!-- 店舗 -->
+        <div class="form-group">
+          <label for="store_id">店舗 (任意)</label>
+          <input type="text" id="store_id" placeholder="例: オーケー, セブンイレブン">
+        </div>
+
+        <!-- タグ -->
+        <div class="form-group">
+          <label for="tags">タグ (任意)</label>
+          <input type="text" id="tags" placeholder="例: 旅行, 外食 (カンマ区切り)">
+        </div>
+
+        <!-- メモ -->
+        <div class="form-group">
+          <label for="memo">メモ (任意)</label>
+          <textarea id="memo" rows="2" placeholder="備考があれば入力"></textarea>
+        </div>
+
+        <button type="submit" id="submit-btn" class="submit-btn">登録する (30秒入力)</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- ② 履歴画面（後ほど拡張） -->
+  <section id="tab-history" class="tab-content hidden">
+    <div class="card">
+      <h3>直近の履歴</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">データ読み込み機能は次のステップで連携します。</p>
+    </div>
+  </section>
+
+  <!-- ③ 集計画面（後ほど拡張） -->
+  <section id="tab-summary" class="tab-content hidden">
+    <div class="card">
+      <h3>今月の集計</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">集計機能は次のステップで連携します。</p>
+    </div>
+  </section>
+
+  <!-- トースト通知 -->
+  <div id="toast" class="toast">登録が完了しました！</div>
+
+  <script>
+    // -------------------------------------------------------------
+    // ⚠️ 設定：デプロイしたGASのウェブアプリURLをここに貼り付けてください
+    // -------------------------------------------------------------
+    const API_URL = "https://script.google.com/macros/s/AKfycbzGtcPmOlCCsFjdtVBIzxg5Q6rgvgNAtLe2K6JlDJdCVGSe0ZZ7og6_8f3WHvPLD-Letg/exec";
+
+    let currentType = 'expense';
+
+    // 初期化処理
+    document.addEventListener('DOMContentLoaded', () => {
+      // 本日の日付をデフォルト設定
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('date').value = today;
+
+      // カテゴリ読み込み
+      fetchCategories();
+    });
+
+    // 収支切り替え
+    function setType(type) {
+      currentType = type;
+      document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === type);
+      });
+    }
+
+    // タブ切り替え
+    function switchTab(tabName) {
+      document.querySelectorAll('.nav-tab').forEach((tab, index) => {
+        const names = ['input', 'history', 'summary'];
+        tab.classList.toggle('active', names[index] === tabName);
+      });
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+    }
+
+    // カテゴリ一覧を取得
+    async function fetchCategories() {
+      const select = document.getElementById('category_id');
+      if (!API_URL || API_URL === "YOUR_GAS_WEB_APP_URL") {
+        select.innerHTML = '<option value="">API_URLを設定してください</option>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}?endpoint=/categories`);
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+          select.innerHTML = '<option value="">カテゴリを選択</option>';
+          json.data.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            select.appendChild(opt);
+          });
+        } else {
+          select.innerHTML = '<option value="">カテゴリ取得失敗</option>';
+        }
+      } catch (err) {
+        console.error(err);
+        select.innerHTML = '<option value="">通信エラー</option>';
+      }
+    }
+
+    // フォーム送信処理
+    async function handleSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送信中...';
+
+      const tagsInput = document.getElementById('tags').value;
+      const tagsArray = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+      const payload = {
+        endpoint: '/transactions',
+        method: 'POST',
+        data: {
+          type: currentType,
+          date: document.getElementById('date').value,
+          amount: Number(document.getElementById('amount').value),
+          category_id: document.getElementById('category_id').value,
+          store_id: document.getElementById('store_id').value,
+          tags: tagsArray,
+          memo: document.getElementById('memo').value
+        }
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' }, // GAS受け取り用
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+
+        if (json.success) {
+          showToast('保存しました！');
+          // 金額・店舗・メモのみクリア（日付とカテゴリはまとめ入力を考慮して保持）
+          document.getElementById('amount').value = '';
+          document.getElementById('store_id').value = '';
+          document.getElementById('memo').value = '';
+        } else {
+          alert('エラー: ' + (json.error?.message || '登録に失敗しました'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('通信エラーが発生しました');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '登録する (30秒入力)';
+      }
+    }
+
+    // トースト表示
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+</html>
