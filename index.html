@@ -57,6 +57,31 @@
     .delete-btn { background: #fef2f2; color: var(--expense); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
     .more-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; color: var(--primary); cursor: pointer; }
 
+    /* 集計ダッシュボードのスタイル */
+    .summary-controls { margin-bottom: 16px; }
+    .summary-type-selector { display: flex; background: var(--border); padding: 3px; border-radius: 8px; margin-bottom: 12px; }
+    .type-btn { flex: 1; padding: 8px 0; border: none; background: transparent; font-size: 0.85rem; font-weight: bold; color: var(--text-muted); cursor: pointer; border-radius: 6px; }
+    .type-btn.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+    .date-picker-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--card-bg); padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); }
+    .picker-btn { background: transparent; border: none; font-size: 1rem; padding: 4px 12px; cursor: pointer; color: var(--primary); font-weight: bold; }
+    .date-picker-bar input, .date-picker-bar select { border: none; font-size: 1rem; font-weight: bold; color: var(--text); background: transparent; text-align: center; cursor: pointer; outline: none; }
+
+    .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+    .summary-cards .card { background: var(--card-bg); padding: 12px 6px; border-radius: var(--radius); border: 1px solid var(--border); text-align: center; }
+    .card-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
+    .card-value { font-size: 0.95rem; font-weight: bold; word-break: break-all; }
+    .income-card .card-value { color: var(--income); }
+    .expense-card .card-value { color: var(--expense); }
+    .balance-card .card-value { color: var(--primary); }
+
+    .category-summary-section h4 { font-size: 0.9rem; margin-bottom: 12px; color: var(--text); }
+    .cat-breakdown-item { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; }
+    .cat-breakdown-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; }
+    .cat-breakdown-amount { font-size: 0.85rem; color: var(--expense); }
+    .cat-progress-bg { background: #f1f5f9; height: 8px; border-radius: 4px; overflow: hidden; }
+    .cat-progress-fill { background: var(--primary); height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+
     .loading-text, .empty-text { text-align: center; color: var(--text-muted); padding: 24px 0; font-size: 0.9rem; }
   </style>
 </head>
@@ -121,9 +146,52 @@
       </div>
     </div>
 
-    <!-- ③ 集計タブ（次回作成） -->
+    <!-- ③ 集計タブ -->
     <div id="tab-summary" class="tab-content hidden">
-      <p class="empty-text">集計機能は準備中です</p>
+      <div class="summary-controls">
+        <div class="summary-type-selector">
+          <button type="button" class="type-btn active" id="btn-mode-month" onclick="setSummaryMode('month')">月別</button>
+          <button type="button" class="type-btn" id="btn-mode-year" onclick="setSummaryMode('year')">年別</button>
+        </div>
+        
+        <!-- 月選択 -->
+        <div id="selector-month" class="date-picker-bar">
+          <button type="button" class="picker-btn" onclick="changeMonth(-1)">◀</button>
+          <input type="month" id="summary-month-input" onchange="renderSummary()">
+          <button type="button" class="picker-btn" onclick="changeMonth(1)">▶</button>
+        </div>
+
+        <!-- 年選択 -->
+        <div id="selector-year" class="date-picker-bar hidden">
+          <button type="button" class="picker-btn" onclick="changeYear(-1)">◀</button>
+          <select id="summary-year-select" onchange="renderSummary()"></select>
+          <button type="button" class="picker-btn" onclick="changeYear(1)">▶</button>
+        </div>
+      </div>
+
+      <!-- サマリーカード -->
+      <div class="summary-cards">
+        <div class="card income-card">
+          <div class="card-label">収入</div>
+          <div class="card-value" id="sum-income">¥0</div>
+        </div>
+        <div class="card expense-card">
+          <div class="card-label">支出</div>
+          <div class="card-value" id="sum-expense">¥0</div>
+        </div>
+        <div class="card balance-card">
+          <div class="card-label">収支</div>
+          <div class="card-value" id="sum-balance">¥0</div>
+        </div>
+      </div>
+
+      <!-- カテゴリ内訳 -->
+      <div class="category-summary-section">
+        <h4>カテゴリ別支出内訳</h4>
+        <div id="category-breakdown-list">
+          <p class="loading-text">集計中...</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -142,6 +210,11 @@
     let displayLimit = 30;
     let editingTransactionId = null;
 
+    // 集計ダッシュボード用変数
+    let summaryMode = 'month'; // 'month' または 'year'
+    let selectedMonth = new Date().toISOString().substring(0, 7); // 'YYYY-MM'
+    let selectedYear = new Date().getFullYear().toString(); // 'YYYY'
+
     window.addEventListener('DOMContentLoaded', async () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
@@ -150,6 +223,9 @@
       const today = new Date().toISOString().split('T')[0];
       const dateInput = document.getElementById('input-date');
       if (dateInput) dateInput.value = today;
+
+      const monthInput = document.getElementById('summary-month-input');
+      if (monthInput) monthInput.value = selectedMonth;
 
       await fetchCategories();
       await fetchTransactions();
@@ -167,6 +243,9 @@
 
       if (tabName === 'history') {
         fetchTransactions();
+      } else if (tabName === 'summary') {
+        initYearOptions();
+        renderSummary();
       }
     }
 
@@ -183,7 +262,10 @@
             select.innerHTML = json.data.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
           }
 
-          if (currentTransactions.length > 0) renderHistoryList();
+          if (currentTransactions.length > 0) {
+            renderHistoryList();
+            renderSummary();
+          }
         }
       } catch (err) {
         console.error('カテゴリ取得エラー:', err);
@@ -198,6 +280,7 @@
         try {
           currentTransactions = JSON.parse(cached);
           renderHistoryList();
+          renderSummary();
         } catch (e) {}
       } else if (container) {
         container.innerHTML = '<p class="loading-text">読み込み中...</p>';
@@ -210,6 +293,8 @@
           currentTransactions = json.data;
           localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(json.data));
           renderHistoryList();
+          initYearOptions();
+          renderSummary();
         }
       } catch (err) {
         console.error('履歴取得エラー:', err);
@@ -219,6 +304,7 @@
       }
     }
 
+    /* --- 履歴機能 --- */
     function renderHistoryList() {
       const container = document.getElementById('history-list');
       if (!container) return;
@@ -232,13 +318,11 @@
       const visibleItems = reversed.slice(0, displayLimit);
 
       let html = visibleItems.map(item => {
-        // IDをカテゴリ名に変換。英数字のUUIDっぽい場合は「未分類」にする
         let catName = categoryMap[item.category_id];
         if (!catName) {
           catName = (item.category_id && !item.category_id.includes('-')) ? item.category_id : '未分類';
         }
 
-        // タイトル作成: 「カテゴリ名 (店舗名)」 または 「カテゴリ名」
         const titleText = item.store_id 
           ? `${escapeHtml(catName)} (${escapeHtml(item.store_id)})`
           : escapeHtml(catName);
@@ -279,6 +363,141 @@
       renderHistoryList();
     }
 
+    /* --- 集計ダッシュボード機能 --- */
+    function setSummaryMode(mode) {
+      summaryMode = mode;
+      document.getElementById('btn-mode-month').classList.toggle('active', mode === 'month');
+      document.getElementById('btn-mode-year').classList.toggle('active', mode === 'year');
+
+      document.getElementById('selector-month').classList.toggle('hidden', mode !== 'month');
+      document.getElementById('selector-year').classList.toggle('hidden', mode !== 'year');
+
+      renderSummary();
+    }
+
+    function changeMonth(delta) {
+      const input = document.getElementById('summary-month-input');
+      let [year, month] = input.value.split('-').map(Number);
+      
+      month += delta;
+      if (month > 12) { month = 1; year++; }
+      if (month < 1) { month = 12; year--; }
+
+      const formatted = `${year}-${String(month).padStart(2, '0')}`;
+      input.value = formatted;
+      selectedMonth = formatted;
+      renderSummary();
+    }
+
+    function initYearOptions() {
+      const select = document.getElementById('summary-year-select');
+      if (!select) return;
+
+      const currentYr = new Date().getFullYear();
+      const years = new Set([currentYr]);
+
+      currentTransactions.forEach(item => {
+        if (item.date) {
+          const yr = item.date.split('-')[0];
+          if (yr) years.add(Number(yr));
+        }
+      });
+
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+      select.innerHTML = sortedYears.map(y => `<option value="${y}">${y}年</option>`).join('');
+      select.value = selectedYear;
+    }
+
+    function changeYear(delta) {
+      const select = document.getElementById('summary-year-select');
+      const currentIndex = select.selectedIndex;
+      const targetIndex = currentIndex - delta; // ソートが降順のため引き算
+
+      if (targetIndex >= 0 && targetIndex < select.options.length) {
+        select.selectedIndex = targetIndex;
+        selectedYear = select.value;
+        renderSummary();
+      }
+    }
+
+    function renderSummary() {
+      const monthInput = document.getElementById('summary-month-input');
+      const yearSelect = document.getElementById('summary-year-select');
+
+      if (monthInput) selectedMonth = monthInput.value;
+      if (yearSelect) selectedYear = yearSelect.value;
+
+      // 対象データのフィルタリング
+      const filtered = currentTransactions.filter(item => {
+        if (!item.date) return false;
+        if (summaryMode === 'month') {
+          return item.date.startsWith(selectedMonth);
+        } else {
+          return item.date.startsWith(selectedYear);
+        }
+      });
+
+      // 合計の計算
+      let totalIncome = 0;
+      let totalExpense = 0;
+      const categoryTotals = {};
+
+      filtered.forEach(item => {
+        const amt = Number(item.amount) || 0;
+        if (item.type === 'income') {
+          totalIncome += amt;
+        } else if (item.type === 'expense') {
+          totalExpense += amt;
+          
+          let catName = categoryMap[item.category_id];
+          if (!catName) {
+            catName = (item.category_id && !item.category_id.includes('-')) ? item.category_id : '未分類';
+          }
+
+          categoryTotals[catName] = (categoryTotals[catName] || 0) + amt;
+        }
+      });
+
+      const balance = totalIncome - totalExpense;
+
+      // サマリーカードの反映
+      document.getElementById('sum-income').innerText = `+¥${totalIncome.toLocaleString()}`;
+      document.getElementById('sum-expense').innerText = `-¥${totalExpense.toLocaleString()}`;
+      
+      const balanceEl = document.getElementById('sum-balance');
+      balanceEl.innerText = `${balance >= 0 ? '+' : ''}¥${balance.toLocaleString()}`;
+      balanceEl.style.color = balance < 0 ? 'var(--expense)' : 'var(--primary)';
+
+      // カテゴリ別内訳の反映
+      const breakdownContainer = document.getElementById('category-breakdown-list');
+      
+      const sortedCategories = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1]);
+
+      if (sortedCategories.length === 0) {
+        breakdownContainer.innerHTML = '<p class="empty-text">この期間の支出データはありません</p>';
+        return;
+      }
+
+      let html = sortedCategories.map(([catName, amount]) => {
+        const percent = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
+        return `
+          <div class="cat-breakdown-item">
+            <div class="cat-breakdown-header">
+              <span>${escapeHtml(catName)} (${percent}%)</span>
+              <span class="cat-breakdown-amount">¥${amount.toLocaleString()}</span>
+            </div>
+            <div class="cat-progress-bg">
+              <div class="cat-progress-fill" style="width: ${percent}%;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      breakdownContainer.innerHTML = html;
+    }
+
+    /* --- データ登録・更新・削除処理 --- */
     async function deleteTransaction(id) {
       if (!confirm('この明細を削除してもよろしいですか？')) return;
 
