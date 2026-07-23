@@ -535,37 +535,58 @@ function switchTab(tabName) {
 // 履歴データを取得して表示
 async function fetchTransactions() {
   const container = document.getElementById('history-list');
-  container.innerHTML = '<p class="loading-text">読み込み中...</p>';
 
+  // ① まずはスマホ内に残っている「前回のデータ」を一瞬で表示！
+  const cachedData = localStorage.getItem('kakeibo_transactions_cache');
+  if (cachedData) {
+    renderHistoryList(JSON.parse(cachedData));
+  } else {
+    container.innerHTML = '<p class="loading-text">読み込み中...</p>';
+  }
+
+  // ② 裏で最新データを取得
   try {
     const res = await fetch(`${API_URL}?endpoint=/transactions`);
     const json = await res.json();
 
-    if (json.success && json.data && json.data.length > 0) {
-      // 直近順（新しい順）に並び替え
-      const list = json.data.reverse();
-      container.innerHTML = list.map(item => `
-        <div class="history-item">
-          <div class="history-left">
-            <span class="history-category">${escapeHtml(item.category_name || item.category_id)}</span>
-            <span class="history-sub">${item.date} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
-            ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
-          </div>
-          <div class="history-right">
-            <span class="history-amount ${item.type}">
-              ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
-            </span>
-            <button class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
-          </div>
-        </div>
-      `).join('');
-    } else {
-      container.innerHTML = '<p class="empty-text">まだ履歴がありません</p>';
+    if (json.success && json.data) {
+      // 最新データをキャッシュに保存
+      localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(json.data));
+      // 画面を最新データに差し替え
+      renderHistoryList(json.data);
     }
   } catch (err) {
     console.error(err);
-    container.innerHTML = '<p class="empty-text">データの取得に失敗しました</p>';
+    if (!cachedData) {
+      container.innerHTML = '<p class="empty-text">データの取得に失敗しました</p>';
+    }
   }
+}
+
+// 描画用の共通処理
+function renderHistoryList(data) {
+  const container = document.getElementById('history-list');
+  if (!data || data.length === 0) {
+    container.innerHTML = '<p class="empty-text">まだ履歴がありません</p>';
+    return;
+  }
+
+  const list = [...data].reverse();
+  container.innerHTML = list.map(item => `
+    <div class="history-item">
+      <div class="history-left">
+        <span class="history-category">${escapeHtml(item.category_id)}</span>
+        <span class="history-sub">${item.date} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
+        ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
+      </div>
+      <div class="history-right">
+        <span class="history-amount ${item.type}">
+          ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
+        </span>
+        <button class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 // 履歴の削除処理
