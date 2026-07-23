@@ -2,17 +2,13 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>家計簿</title>
-  <!-- PWA & iOS 専用設定 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家計簿アプリ</title>
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#2563eb">
   <style>
     :root {
       --primary: #2563eb;
-      --primary-hover: #1d4ed8;
       --bg: #f8fafc;
       --card-bg: #ffffff;
       --text: #0f172a;
@@ -23,710 +19,395 @@
       --radius: 12px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 80px; }
 
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 16px;
-      padding-bottom: calc(24px + env(safe-area-inset-bottom));
-      max-width: 480px;
-      margin: 0 auto;
-    }
-
-    header {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--text);
-    }
+    .header { background: var(--card-bg); padding: 16px; text-align: center; font-weight: bold; border-bottom: 1px solid var(--border); }
+    .container { max-width: 500px; margin: 0 auto; padding: 16px; }
 
     /* ナビゲーションタブ */
-    .nav-tabs {
-      display: flex;
-      background: #e2e8f0;
-      padding: 4px;
-      border-radius: var(--radius);
-      margin-bottom: 20px;
-    }
+    .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; border-top: 1px solid var(--border); z-index: 100; }
+    .nav-tab { flex: 1; padding: 12px 0; text-align: center; font-size: 0.8rem; color: var(--text-muted); background: none; border: none; cursor: pointer; }
+    .nav-tab.active { color: var(--primary); font-weight: bold; }
 
-    .nav-tab {
-      flex: 1;
-      padding: 10px 0;
-      text-align: center;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    /* フォーム要素 */
+    .tab-content.hidden { display: none; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+    .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--card-bg); }
+    
+    .primary-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    .secondary-btn { background: #e2e8f0; color: var(--text); border: none; padding: 14px 20px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
 
-    .nav-tab.active {
-      background: var(--card-bg);
-      color: var(--text);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+    /* 履歴表示 */
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .refresh-btn { background: transparent; border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+    
+    .history-item { background: var(--card-bg); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .history-left { display: flex; flex-direction: column; gap: 4px; }
+    .history-category { font-size: 0.9rem; font-weight: bold; color: var(--primary); }
+    .history-sub { font-size: 0.75rem; color: var(--text-muted); }
+    .history-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .history-amount { font-size: 1.1rem; font-weight: bold; }
+    .history-amount.expense { color: var(--expense); }
+    .history-amount.income { color: var(--income); }
 
-    /* カードコンテナ */
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      border: 1px solid var(--border);
-    }
+    .action-btns { display: flex; gap: 6px; }
+    .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
+    .delete-btn { background: #fef2f2; color: var(--expense); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
+    .more-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; color: var(--primary); cursor: pointer; }
 
-    /* 収支切り替えトグル */
-    .type-toggle {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .type-btn {
-      flex: 1;
-      padding: 12px;
-      border: 2px solid var(--border);
-      border-radius: var(--radius);
-      background: transparent;
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .type-btn.active[data-type="expense"] {
-      border-color: var(--expense);
-      background-color: #fef2f2;
-      color: var(--expense);
-    }
-
-    .type-btn.active[data-type="income"] {
-      border-color: var(--income);
-      background-color: #ecfdf5;
-      color: var(--income);
-    }
-
-    /* フォームグループ */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 1rem;
-      color: var(--text);
-      background: #fff;
-      appearance: none;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    /* 金額入力専用 */
-    .amount-input-wrap {
-      position: relative;
-    }
-
-    .amount-input-wrap span {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-weight: 700;
-      color: var(--text-muted);
-    }
-
-    .amount-input-wrap input {
-      padding-left: 32px;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    /* 送信ボタン */
-    .submit-btn {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: var(--radius);
-      background: var(--primary);
-      color: #fff;
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: background 0.2s;
-    }
-
-    .submit-btn:disabled {
-      background: #94a3b8;
-    }
-
-    /* トースト通知 */
-    .toast {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: #0f172a;
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 30px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      z-index: 1000;
-    }
-
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .hidden { display: none; }
-    /* 履歴画面のスタイル */
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.refresh-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.history-item {
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  border: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.history-left {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.history-category {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.history-sub {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.history-right {
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-.history-amount {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.history-amount.expense { color: var(--expense); }
-.history-amount.income { color: var(--income); }
-
-.delete-btn {
-  background: #fef2f2;
-  color: #ef4444;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.loading-text, .empty-text {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 24px 0;
-  font-size: 0.9rem;
-}
-    .action-btns {
-  display: flex;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.edit-btn {
-  background: #eff6ff;
-  color: #2563eb;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.more-btn {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--primary);
-  cursor: pointer;
-}
+    .loading-text, .empty-text { text-align: center; color: var(--text-muted); padding: 24px 0; font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>家計簿アプリ</h1>
-  </header>
+  <div class="header">スマート家計簿</div>
 
-  <!-- タブ切り替え -->
-  <nav class="nav-tabs">
-    <button class="nav-tab active" onclick="switchTab('input')">入力</button>
-    <button class="nav-tab" onclick="switchTab('history')">履歴</button>
-    <button class="nav-tab" onclick="switchTab('summary')">集計</button>
-  </nav>
+  <div class="container">
+    <!-- ① 入力タブ -->
+    <div id="tab-input" class="tab-content">
+      <form id="kakeibo-form" onsubmit="saveTransaction(event)">
+        <div class="form-group">
+          <label for="input-date">日付</label>
+          <input type="date" id="input-date" required>
+        </div>
 
-  <!-- ① 入力画面 -->
-  <!-- 入力タブ -->
-<div id="tab-input" class="tab-content">
-  <form id="kakeibo-form" onsubmit="saveTransaction(event)">
-    <div class="form-group">
-      <label for="input-date">日付</label>
-      <input type="date" id="input-date" required>
+        <div class="form-group">
+          <label for="input-type">収支区分</label>
+          <select id="input-type">
+            <option value="expense">支出</option>
+            <option value="income">収入</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="input-amount">金額</label>
+          <input type="number" id="input-amount" placeholder="1000" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-category">カテゴリ</label>
+          <select id="input-category">
+            <option value="">読み込み中...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="input-store">店舗名・利用先（任意）</label>
+          <input type="text" id="input-store" placeholder="例: セブンイレブン">
+        </div>
+
+        <div class="form-group">
+          <label for="input-memo">メモ（任意）</label>
+          <input type="text" id="input-memo" placeholder="例: お弁当代">
+        </div>
+
+        <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" id="submit-btn" class="primary-btn">登録する</button>
+          <button type="button" id="cancel-edit-btn" class="secondary-btn" onclick="resetForm()" style="display: none;">キャンセル</button>
+        </div>
+      </form>
     </div>
 
-    <div class="form-group">
-      <label for="input-type">収支区分</label>
-      <select id="input-type">
-        <option value="expense">支出</option>
-        <option value="income">収入</option>
-      </select>
+    <!-- ② 履歴タブ -->
+    <div id="tab-history" class="tab-content hidden">
+      <div class="history-header">
+        <h3>利用履歴</h3>
+        <button type="button" class="refresh-btn" onclick="fetchTransactions()">🔄 更新</button>
+      </div>
+      <div id="history-list">
+        <p class="loading-text">読み込み中...</p>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="input-amount">金額</label>
-      <input type="number" id="input-amount" placeholder="1000" required>
+    <!-- ③ 集計タブ（次回作成） -->
+    <div id="tab-summary" class="tab-content hidden">
+      <p class="empty-text">集計機能は準備中です</p>
     </div>
-
-    <div class="form-group">
-      <label for="input-category">カテゴリ</label>
-      <select id="input-category">
-        <!-- JavaScriptで自動読み込みされます -->
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="input-store">店舗名・利用先（任意）</label>
-      <input type="text" id="input-store" placeholder="例: セブンイレブン">
-    </div>
-
-    <div class="form-group">
-      <label for="input-memo">メモ（任意）</label>
-      <input type="text" id="input-memo" placeholder="例: お弁当代">
-    </div>
-
-    <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
-      <button type="submit" id="submit-btn" class="primary-btn">登録する</button>
-      <button type="button" id="cancel-edit-btn" class="secondary-btn" onclick="resetForm()" style="display: none;">キャンセル</button>
-    </div>
-  </form>
-</div>
-
-  <!-- ② 履歴画面（後ほど拡張） -->
-  <!-- ② 履歴画面 -->
-<section id="tab-history" class="tab-content hidden">
-  <div class="history-header">
-    <h3>直近30件の履歴</h3>
-    <button type="button" class="refresh-btn" onclick="fetchTransactions()">🔄 更新</button>
   </div>
-  
-  <div id="history-list" class="history-list">
-    <p class="loading-text">読み込み中...</p>
+
+  <!-- 下部ナビゲーション -->
+  <div class="nav-bar">
+    <button class="nav-tab active" onclick="switchTab('input')">📝 入力</button>
+    <button class="nav-tab" onclick="switchTab('history')">📜 履歴</button>
+    <button class="nav-tab" onclick="switchTab('summary')">📊 集計</button>
   </div>
-</section>
 
-  <!-- ③ 集計画面（後ほど拡張） -->
-  <section id="tab-summary" class="tab-content hidden">
-    <div class="card">
-      <h3>今月の集計</h3>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">集計機能は次のステップで連携します。</p>
-    </div>
-  </section>
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbzGtcPmOlCCsFjdtVBIzxg5Q6rgvgNAtLe2K6JlDJdCVGSe0ZZ7og6_8f3WHvPLD-Letg/exec";
 
-  <!-- トースト通知 -->
-  <div id="toast" class="toast">登録が完了しました！</div>
-  
-   <script>
-// ==========================================
-// 1. 基本設定（GASのAPI URL）
-// ==========================================
-const API_URL = "https://script.google.com/macros/s/AKfycbzGtcPmOlCCsFjdtVBIzxg5Q6rgvgNAtLe2K6JlDJdCVGSe0ZZ7og6_8f3WHvPLD-Letg/exec";
+    let categoryMap = {};
+    let currentTransactions = [];
+    let displayLimit = 30;
+    let editingTransactionId = null;
 
-// ==========================================
-// 2. グローバル変数
-// ==========================================
-let categoryMap = {};          // ID -> カテゴリ名変換マップ
-let currentTransactions = []; // 全履歴データ
-let displayLimit = 30;        // 初期表示件数
-let editingTransactionId = null; // 編集中のID (nullなら新規登録)
+    window.addEventListener('DOMContentLoaded', async () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
+      }
 
-// ==========================================
-// 3. 画面読み込み時の初期化処理
-// ==========================================
-window.addEventListener('DOMContentLoaded', async () => {
-  // Service Worker (PWA) の登録
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW Error:', err));
-  }
+      const today = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('input-date');
+      if (dateInput) dateInput.value = today;
 
-  // 今日の日付を初期値としてセット
-  const today = new Date().toISOString().split('T')[0];
-  const dateInput = document.getElementById('input-date');
-  if (dateInput) dateInput.value = today;
+      await fetchCategories();
+      await fetchTransactions();
+    });
 
-  // まずカテゴリを取得してマップを作成、そのあと履歴を取得
-  await fetchCategories();
-  await fetchTransactions();
-});
-
-// ==========================================
-// 4. タブ切り替え処理
-// ==========================================
-function switchTab(tabName) {
-  document.querySelectorAll('.nav-tab').forEach((tab, index) => {
-    const names = ['input', 'history', 'summary'];
-    tab.classList.toggle('active', names[index] === tabName);
-  });
-  
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-  const target = document.getElementById(`tab-${tabName}`);
-  if (target) target.classList.remove('hidden');
-
-  if (tabName === 'history') {
-    fetchTransactions();
-  }
-}
-
-// ==========================================
-// 5. カテゴリ一覧取得＆マップ作成
-// ==========================================
-async function fetchCategories() {
-  try {
-    const res = await fetch(`${API_URL}?endpoint=/categories`);
-    const json = await res.json();
-    if (json.success && json.data) {
-      categoryMap = {};
-      json.data.forEach(cat => {
-        categoryMap[cat.id] = cat.name;
+    function switchTab(tabName) {
+      document.querySelectorAll('.nav-tab').forEach((tab, index) => {
+        const names = ['input', 'history', 'summary'];
+        tab.classList.toggle('active', names[index] === tabName);
       });
+      
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      const target = document.getElementById(`tab-${tabName}`);
+      if (target) target.classList.remove('hidden');
 
-      // 選択肢（セレクトボックス）の更新
-      const select = document.getElementById('input-category');
-      if (select) {
-        select.innerHTML = json.data.map(c => 
-          `<option value="${c.id}">${escapeHtml(c.name)}</option>`
-        ).join('');
-      }
-
-      // 履歴がすでに読み込まれていれば日本語表示に更新
-      if (currentTransactions.length > 0) {
-        renderHistoryList();
+      if (tabName === 'history') {
+        fetchTransactions();
       }
     }
-  } catch (err) {
-    console.error('カテゴリ取得失敗:', err);
-  }
-}
 
-// ==========================================
-// 6. 履歴一覧取得・キャッシュ・描画
-// ==========================================
-async function fetchTransactions() {
-  const container = document.getElementById('history-list');
+    async function fetchCategories() {
+      try {
+        const res = await fetch(`${API_URL}?endpoint=/categories`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          categoryMap = {};
+          json.data.forEach(cat => { categoryMap[cat.id] = cat.name; });
 
-  // キャッシュがあれば即時表示
-  const cached = localStorage.getItem('kakeibo_transactions_cache');
-  if (cached) {
-    try {
-      currentTransactions = JSON.parse(cached);
-      renderHistoryList();
-    } catch (e) {
-      console.error(e);
+          const select = document.getElementById('input-category');
+          if (select) {
+            select.innerHTML = json.data.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+          }
+
+          if (currentTransactions.length > 0) renderHistoryList();
+        }
+      } catch (err) {
+        console.error('カテゴリ取得エラー:', err);
+      }
     }
-  } else if (container) {
-    container.innerHTML = '<p class="loading-text">読み込み中...</p>';
-  }
 
-  try {
-    const res = await fetch(`${API_URL}?endpoint=/transactions`);
-    const json = await res.json();
-    if (json.success && json.data) {
-      currentTransactions = json.data;
-      localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(json.data));
-      renderHistoryList();
+    async function fetchTransactions() {
+      const container = document.getElementById('history-list');
+
+      const cached = localStorage.getItem('kakeibo_transactions_cache');
+      if (cached) {
+        try {
+          currentTransactions = JSON.parse(cached);
+          renderHistoryList();
+        } catch (e) {}
+      } else if (container) {
+        container.innerHTML = '<p class="loading-text">読み込み中...</p>';
+      }
+
+      try {
+        const res = await fetch(`${API_URL}?endpoint=/transactions`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          currentTransactions = json.data;
+          localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(json.data));
+          renderHistoryList();
+        }
+      } catch (err) {
+        console.error('履歴取得エラー:', err);
+        if (!cached && container) {
+          container.innerHTML = '<p class="empty-text">データの読み込みに失敗しました</p>';
+        }
+      }
     }
-  } catch (err) {
-    console.error('履歴取得失敗:', err);
-    if (!cached && container) {
-      container.innerHTML = '<p class="empty-text">データの読み込みに失敗しました</p>';
-    }
-  }
-}
 
-function renderHistoryList() {
-  const container = document.getElementById('history-list');
-  if (!container) return;
+    function renderHistoryList() {
+      const container = document.getElementById('history-list');
+      if (!container) return;
 
-  if (!currentTransactions || currentTransactions.length === 0) {
-    container.innerHTML = '<p class="empty-text">まだ履歴がありません</p>';
-    return;
-  }
+      if (!currentTransactions || currentTransactions.length === 0) {
+        container.innerHTML = '<p class="empty-text">まだ履歴がありません</p>';
+        return;
+      }
 
-  // 新しい順（降順）
-  const reversed = [...currentTransactions].reverse();
-  const visibleItems = reversed.slice(0, displayLimit);
+      const reversed = [...currentTransactions].reverse();
+      const visibleItems = reversed.slice(0, displayLimit);
 
-  let html = visibleItems.map(item => {
-    // IDを日本語カテゴリ名に変換
-    const catName = categoryMap[item.category_id] || item.category_id || '未分類';
+      let html = visibleItems.map(item => {
+        const catName = categoryMap[item.category_id] || item.category_id || '未分類';
 
-    return `
-      <div class="history-item">
-        <div class="history-left">
-          <span class="history-category">${escapeHtml(catName)}</span>
-          <span class="history-sub">${escapeHtml(item.date)} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
-          ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
-        </div>
-        <div class="history-right">
-          <span class="history-amount ${item.type}">
-            ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
-          </span>
-          <div class="action-btns" style="margin-top: 6px; display: flex; gap: 4px; justify-content: flex-end;">
-            <button type="button" class="edit-btn" onclick="startEditTransaction('${item.id}')">編集</button>
-            <button type="button" class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
+        return `
+          <div class="history-item">
+            <div class="history-left">
+              <span class="history-category">${escapeHtml(catName)}</span>
+              <span class="history-sub">${escapeHtml(item.date)} ${item.store_id ? '・ ' + escapeHtml(item.store_id) : ''}</span>
+              ${item.memo ? `<span class="history-sub">📝 ${escapeHtml(item.memo)}</span>` : ''}
+            </div>
+            <div class="history-right">
+              <span class="history-amount ${item.type}">
+                ${item.type === 'expense' ? '-' : '+'}¥${Number(item.amount).toLocaleString()}
+              </span>
+              <div class="action-btns">
+                <button type="button" class="edit-btn" onclick="startEditTransaction('${item.id}')">編集</button>
+                <button type="button" class="delete-btn" onclick="deleteTransaction('${item.id}')">削除</button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+        `;
+      }).join('');
 
-  // 30件以上残っている場合の「もっと見る」ボタン
-  if (reversed.length > displayLimit) {
-    html += `
-      <div style="text-align: center; margin: 20px 0;">
-        <button type="button" class="more-btn" onclick="loadMoreHistory()">さらに表示する (${displayLimit} / ${reversed.length}件)</button>
-      </div>
-    `;
-  }
+      if (reversed.length > displayLimit) {
+        html += `
+          <div style="text-align: center; margin: 20px 0;">
+            <button type="button" class="more-btn" onclick="loadMoreHistory()">さらに表示する (${displayLimit} / ${reversed.length}件)</button>
+          </div>
+        `;
+      }
 
-  container.innerHTML = html;
-}
+      container.innerHTML = html;
+    }
 
-function loadMoreHistory() {
-  displayLimit += 30;
-  renderHistoryList();
-}
+    function loadMoreHistory() {
+      displayLimit += 30;
+      renderHistoryList();
+    }
 
-// ==========================================
-// 7. 明細削除機能
-// ==========================================
-async function deleteTransaction(id) {
-  if (!confirm('この明細を削除してもよろしいですか？')) return;
+    async function deleteTransaction(id) {
+      if (!confirm('この明細を削除してもよろしいですか？')) return;
 
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        endpoint: '/transactions/delete',
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            endpoint: '/transactions/delete',
+            method: 'POST',
+            data: { id: id }
+          })
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          showToast('削除しました');
+          await fetchTransactions();
+        } else {
+          alert('削除に失敗しました');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('通信エラーが発生しました');
+      }
+    }
+
+    function startEditTransaction(id) {
+      const item = currentTransactions.find(t => String(t.id) === String(id));
+      if (!item) return;
+
+      editingTransactionId = item.id;
+
+      if (document.getElementById('input-date')) document.getElementById('input-date').value = item.date;
+      if (document.getElementById('input-amount')) document.getElementById('input-amount').value = item.amount;
+      if (document.getElementById('input-type')) document.getElementById('input-type').value = item.type;
+      if (document.getElementById('input-category')) document.getElementById('input-category').value = item.category_id;
+      if (document.getElementById('input-store')) document.getElementById('input-store').value = item.store_id || '';
+      if (document.getElementById('input-memo')) document.getElementById('input-memo').value = item.memo || '';
+
+      const submitBtn = document.getElementById('submit-btn');
+      if (submitBtn) submitBtn.innerText = '✏️ 変更を保存する';
+
+      const cancelBtn = document.getElementById('cancel-edit-btn');
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
+
+      switchTab('input');
+      showToast('編集モードに切り替えました');
+    }
+
+    function resetForm() {
+      editingTransactionId = null;
+      const form = document.getElementById('kakeibo-form');
+      if (form) form.reset();
+
+      const today = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('input-date');
+      if (dateInput) dateInput.value = today;
+
+      const submitBtn = document.getElementById('submit-btn');
+      if (submitBtn) submitBtn.innerText = '登録する';
+
+      const cancelBtn = document.getElementById('cancel-edit-btn');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+
+    async function saveTransaction(e) {
+      if (e) e.preventDefault();
+
+      const submitBtn = document.getElementById('submit-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = '送信中...';
+      }
+
+      const payload = {
+        endpoint: '/transactions',
         method: 'POST',
-        data: { id: id }
-      })
-    });
+        data: {
+          id: editingTransactionId,
+          date: document.getElementById('input-date').value,
+          amount: Number(document.getElementById('input-amount').value),
+          type: document.getElementById('input-type').value,
+          category_id: document.getElementById('input-category').value,
+          store_id: document.getElementById('input-store') ? document.getElementById('input-store').value : '',
+          memo: document.getElementById('input-memo') ? document.getElementById('input-memo').value : ''
+        }
+      };
 
-    const json = await res.json();
-    if (json.success) {
-      showToast('削除しました');
-      await fetchTransactions();
-    } else {
-      alert('削除に失敗しました: ' + (json.error ? json.error.message : ''));
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          showToast(editingTransactionId ? '更新しました！' : '登録しました！');
+          resetForm();
+          await fetchTransactions();
+          switchTab('history');
+        } else {
+          alert('エラーが発生しました: ' + (json.error ? json.error.message : ''));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('通信エラーが発生しました');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = editingTransactionId ? '✏️ 変更を保存する' : '登録する';
+        }
+      }
     }
-  } catch (err) {
-    console.error(err);
-    alert('通信エラーが発生しました');
-  }
-}
 
-// ==========================================
-// 8. 編集モード開始 & リセット
-// ==========================================
-function startEditTransaction(id) {
-  const item = currentTransactions.find(t => String(t.id) === String(id));
-  if (!item) return;
-
-  editingTransactionId = item.id;
-
-  if (document.getElementById('input-date')) document.getElementById('input-date').value = item.date;
-  if (document.getElementById('input-amount')) document.getElementById('input-amount').value = item.amount;
-  if (document.getElementById('input-type')) document.getElementById('input-type').value = item.type;
-  if (document.getElementById('input-category')) document.getElementById('input-category').value = item.category_id;
-  if (document.getElementById('input-store')) document.getElementById('input-store').value = item.store_id || '';
-  if (document.getElementById('input-memo')) document.getElementById('input-memo').value = item.memo || '';
-
-  const submitBtn = document.getElementById('submit-btn');
-  if (submitBtn) submitBtn.innerText = '✏️ 変更を保存する';
-
-  const cancelBtn = document.getElementById('cancel-edit-btn');
-  if (cancelBtn) cancelBtn.style.display = 'inline-block';
-
-  switchTab('input');
-  showToast('編集モードに切り替えました');
-}
-
-function resetForm() {
-  editingTransactionId = null;
-  const form = document.getElementById('kakeibo-form');
-  if (form) form.reset();
-
-  const today = new Date().toISOString().split('T')[0];
-  const dateInput = document.getElementById('input-date');
-  if (dateInput) dateInput.value = today;
-
-  const submitBtn = document.getElementById('submit-btn');
-  if (submitBtn) submitBtn.innerText = '登録する';
-
-  const cancelBtn = document.getElementById('cancel-edit-btn');
-  if (cancelBtn) cancelBtn.style.display = 'none';
-}
-
-// ==========================================
-// 9. データ保存（新規登録 / 編集更新）
-// ==========================================
-async function saveTransaction(e) {
-  if (e) e.preventDefault();
-
-  const submitBtn = document.getElementById('submit-btn');
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.innerText = '送信中...';
-  }
-
-  const payload = {
-    endpoint: '/transactions',
-    method: 'POST',
-    data: {
-      id: editingTransactionId,
-      date: document.getElementById('input-date').value,
-      amount: Number(document.getElementById('input-amount').value),
-      type: document.getElementById('input-type').value,
-      category_id: document.getElementById('input-category').value,
-      store_id: document.getElementById('input-store') ? document.getElementById('input-store').value : '',
-      memo: document.getElementById('input-memo') ? document.getElementById('input-memo').value : ''
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
-  };
 
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-
-    const json = await res.json();
-    if (json.success) {
-      showToast(editingTransactionId ? '更新しました！' : '登録しました！');
-      resetForm();
-      await fetchTransactions();
-      switchTab('history');
-    } else {
-      alert('エラーが発生しました: ' + (json.error ? json.error.message : ''));
+    function showToast(message) {
+      let toast = document.getElementById('toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.style.cssText = `
+          position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+          background: rgba(15, 23, 42, 0.9); color: #fff; padding: 10px 20px;
+          border-radius: 20px; font-size: 0.85rem; font-weight: bold; z-index: 9999;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: opacity 0.3s;
+        `;
+        document.body.appendChild(toast);
+      }
+      toast.innerText = message;
+      toast.style.opacity = '1';
+      setTimeout(() => { toast.style.opacity = '0'; }, 2500);
     }
-  } catch (err) {
-    console.error(err);
-    alert('通信エラーが発生しました');
-  } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerText = editingTransactionId ? '✏️ 変更を保存する' : '登録する';
-    }
-  }
-}
-
-// ==========================================
-// 10. ユーティリティ（文字エスケープ & トースト表示）
-// ==========================================
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function showToast(message) {
-  let toast = document.getElementById('toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.style.cssText = `
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.9); color: #fff; padding: 10px 20px;
-      border-radius: 20px; font-size: 0.85rem; font-weight: 600; z-index: 9999;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: opacity 0.3s;
-    `;
-    document.body.appendChild(toast);
-  }
-  toast.innerText = message;
-  toast.style.opacity = '1';
-  setTimeout(() => {
-    toast.style.opacity = '0';
-  }, 2500);
-}
-</script>
-
+  </script>
 </body>
 </html>
