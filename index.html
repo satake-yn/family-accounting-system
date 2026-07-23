@@ -57,7 +57,6 @@
     .tag-badge { display: inline-block; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; margin-right: 4px; margin-top: 4px; }
     .owner-badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; margin-right: 4px; }
 
-    /* 履歴ボタンの大型化 */
     .card-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
     .btn-action { flex: 1; padding: 10px 0; border-radius: 6px; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-align: center; }
     .btn-edit { background: #f1f5f9; color: var(--primary); }
@@ -83,7 +82,6 @@
     .progress-bg { background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden; }
     .progress-fill { background: var(--primary); height: 100%; border-radius: 3px; }
 
-    /* 年収ボックス（一番下に配置） */
     .annual-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: var(--radius); padding: 14px; margin-top: 24px; margin-bottom: 10px; }
     .annual-title { font-size: 0.82rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
     .annual-amount { font-size: 1.2rem; font-weight: 800; color: var(--income); }
@@ -116,11 +114,14 @@
           </select>
         </div>
 
-        <!-- 収入時のみ表示する必須フィールド -->
+        <!-- 収入時のみ表示する必須フィールド（雄太・奈緒美の選択肢） -->
         <div id="income-fields" class="form-group hidden" style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 16px;">
           <div class="form-group" style="margin-bottom: 0;">
             <label for="input-owner">収入者名（必須）</label>
-            <input type="text" id="input-owner" placeholder="例: 山田 太郎">
+            <select id="input-owner">
+              <option value="雄太">雄太</option>
+              <option value="奈緒美">奈緒美</option>
+            </select>
           </div>
         </div>
 
@@ -162,7 +163,7 @@
     <div id="tab-history" class="tab-content hidden">
       <div class="history-header">
         <h3>利用履歴</h3>
-        <button type="button" class="refresh-btn" onclick="fetchTransactions()">最新情報に更新</button>
+        <button type="button" class="refresh-btn" onclick="fetchTransactionsSilently(true)">最新情報に更新</button>
       </div>
       <div id="history-list">
         <p class="loading-text">読み込み中...</p>
@@ -171,27 +172,23 @@
 
     <!-- ③ 集計タブ -->
     <div id="tab-summary" class="tab-content hidden">
-      <!-- モード切り替え（年別を上に配置） -->
       <div class="summary-type-selector">
         <button type="button" class="type-btn active" id="btn-mode-year" onclick="setSummaryMode('year')">年別</button>
         <button type="button" class="type-btn" id="btn-mode-month" onclick="setSummaryMode('month')">月別</button>
       </div>
       
-      <!-- 年選択（上に表示） -->
       <div id="selector-year" class="date-picker-bar">
         <button type="button" class="picker-btn" onclick="changeYear(-1)">‹</button>
         <select id="summary-year-select" onchange="renderSummary()"></select>
         <button type="button" class="picker-btn" onclick="changeYear(1)">›</button>
       </div>
 
-      <!-- 月選択（月別モード時に下へ表示） -->
       <div id="selector-month" class="date-picker-bar hidden">
         <button type="button" class="picker-btn" onclick="changeMonth(-1)">‹</button>
         <input type="month" id="summary-month-input" onchange="renderSummary()">
         <button type="button" class="picker-btn" onclick="changeMonth(1)">›</button>
       </div>
 
-      <!-- サマリーボックス -->
       <div class="summary-grid">
         <div class="summary-box">
           <div class="box-label">総収入</div>
@@ -207,13 +204,11 @@
         </div>
       </div>
 
-      <!-- 優先度高：支出カテゴリ別内訳 -->
       <div class="section-title">支出カテゴリ別内訳</div>
       <div id="category-breakdown-list">
         <p class="loading-text">集計中...</p>
       </div>
 
-      <!-- 優先度低：一番下に配置した人物別年収（給与・賞与）確認ボックス -->
       <div class="annual-box">
         <div class="annual-title">年収対象額（給与・賞与の合計）</div>
         <div class="annual-amount" id="sum-annual-salary">¥0</div>
@@ -281,7 +276,6 @@
     </div>
   </div>
 
-  <!-- 下部ナビゲーション -->
   <div class="nav-bar">
     <button class="nav-tab active" onclick="switchTab('input')">入力</button>
     <button class="nav-tab" onclick="switchTab('history')">履歴</button>
@@ -293,6 +287,21 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzGtcPmOlCCsFjdtVBIzxg5Q6rgvgNAtLe2K6JlDJdCVGSe0ZZ7og6_8f3WHvPLD-Letg/exec";
 
+    // 標準カテゴリセット
+    const DEFAULT_CATEGORIES = [
+      { id: 'cat_salary', name: '給与', type: 'income' },
+      { id: 'cat_bonus', name: '賞与', type: 'income' },
+      { id: 'cat_other_inc', name: 'その他収入', type: 'income' },
+      { id: 'cat_food', name: '食費', type: 'expense' },
+      { id: 'cat_daily', name: '日用品', type: 'expense' },
+      { id: 'cat_trans', name: '交通費', type: 'expense' },
+      { id: 'cat_housing', name: '住居費', type: 'expense' },
+      { id: 'cat_util', name: '水道光熱費', type: 'expense' },
+      { id: 'cat_ent', name: '娯楽・交際費', type: 'expense' },
+      { id: 'cat_med', name: '医療費', type: 'expense' },
+      { id: 'cat_other_exp', name: 'その他支出', type: 'expense' }
+    ];
+
     let categoryMap = {};
     let categoryTypeList = [];
     let currentTransactions = [];
@@ -300,7 +309,7 @@
     let displayLimit = 30;
     let editingTransactionId = null;
 
-    let summaryMode = 'year'; // デフォルトを年別に設定
+    let summaryMode = 'year';
     let selectedMonth = new Date().toISOString().substring(0, 7);
     let selectedYear = new Date().getFullYear().toString();
 
@@ -314,7 +323,7 @@
 
       loadLocalSettings();
       await fetchCategories();
-      await fetchTransactions();
+      await fetchTransactionsSilently();
       checkAndApplyRecurring();
     });
 
@@ -328,7 +337,7 @@
       const target = document.getElementById(`tab-${tabName}`);
       if (target) target.classList.remove('hidden');
 
-      if (tabName === 'history') fetchTransactions();
+      if (tabName === 'history') renderHistoryList();
       if (tabName === 'summary') { initYearOptions(); renderSummary(); }
       if (tabName === 'recurring') renderRecurringList();
       if (tabName === 'settings') renderCategorySettingsList();
@@ -337,16 +346,21 @@
     function toggleIncomeFields() {
       const type = document.getElementById('input-type').value;
       const incomeFields = document.getElementById('income-fields');
-      const ownerInput = document.getElementById('input-owner');
 
       if (type === 'income') {
         incomeFields.classList.remove('hidden');
-        ownerInput.required = true;
       } else {
         incomeFields.classList.add('hidden');
-        ownerInput.required = false;
       }
       updateCategoryDropdown();
+    }
+
+    function rebuildCategoryMap() {
+      categoryMap = {};
+      categoryTypeList.forEach(c => {
+        categoryMap[c.id] = c.name;
+        categoryMap[c.name] = c.name;
+      });
     }
 
     function loadLocalSettings() {
@@ -354,21 +368,42 @@
       if (savedRec) recurringItems = JSON.parse(savedRec);
 
       const savedCats = localStorage.getItem('kakeibo_custom_cats');
-      if (savedCats) categoryTypeList = JSON.parse(savedCats);
+      if (savedCats) {
+        categoryTypeList = JSON.parse(savedCats);
+      } else {
+        categoryTypeList = [...DEFAULT_CATEGORIES];
+      }
+      rebuildCategoryMap();
+
+      const cachedTx = localStorage.getItem('kakeibo_transactions_cache');
+      if (cachedTx) {
+        try {
+          currentTransactions = JSON.parse(cachedTx);
+        } catch(e) {}
+      }
     }
 
     function saveLocalSettings() {
       localStorage.setItem('kakeibo_recurring', JSON.stringify(recurringItems));
       localStorage.setItem('kakeibo_custom_cats', JSON.stringify(categoryTypeList));
+      rebuildCategoryMap();
     }
 
-    /* --- カテゴリ管理 --- */
+    /* --- カテゴリ表示ロジック強化 --- */
     function getCategoryName(catId) {
       if (!catId) return '未分類';
-      if (categoryMap[catId]) return categoryMap[catId];
-      if (categoryMap[String(catId)]) return categoryMap[String(catId)];
-      const strId = String(catId);
-      if (!strId.includes('-') && strId.length < 20) return strId;
+      const idStr = String(catId).trim();
+      if (!idStr) return '未分類';
+
+      if (categoryMap[idStr]) return categoryMap[idStr];
+
+      const found = categoryTypeList.find(c => String(c.id) === idStr || c.name === idStr);
+      if (found) return found.name;
+
+      if (!idStr.startsWith('cat_') && !idStr.startsWith('rec_') && !/^\d{10,}$/.test(idStr)) {
+        return idStr;
+      }
+
       return '未分類';
     }
 
@@ -376,18 +411,14 @@
       try {
         const res = await fetch(`${API_URL}?endpoint=/categories`);
         const json = await res.json();
-        if (json.success && json.data) {
-          categoryMap = {};
-          const apiCats = json.data.map(c => ({ id: String(c.id), name: c.name, type: 'expense' }));
-          
-          if (categoryTypeList.length === 0) {
-            categoryTypeList = apiCats;
-          }
-
-          categoryTypeList.forEach(c => {
-            categoryMap[c.id] = c.name;
+        if (json.success && json.data && json.data.length > 0) {
+          json.data.forEach(c => {
+            const exists = categoryTypeList.find(existing => String(existing.id) === String(c.id));
+            if (!exists) {
+              categoryTypeList.push({ id: String(c.id), name: c.name, type: 'expense' });
+            }
           });
-
+          saveLocalSettings();
           updateCategoryDropdown();
         }
       } catch (err) {
@@ -414,7 +445,6 @@
 
       const newId = 'cat_' + Date.now();
       categoryTypeList.push({ id: newId, name: name, type: type });
-      categoryMap[newId] = name;
 
       saveLocalSettings();
       updateCategoryDropdown();
@@ -425,7 +455,6 @@
 
     function deleteCategory(id) {
       categoryTypeList = categoryTypeList.filter(c => c.id !== id);
-      delete categoryMap[id];
       saveLocalSettings();
       updateCategoryDropdown();
       renderCategorySettingsList();
@@ -452,21 +481,9 @@
       `).join('');
     }
 
-    /* --- 取引データ取得・表示 --- */
-    async function fetchTransactions() {
-      const container = document.getElementById('history-list');
-
-      const cached = localStorage.getItem('kakeibo_transactions_cache');
-      if (cached) {
-        try {
-          currentTransactions = JSON.parse(cached);
-          renderHistoryList();
-          renderSummary();
-        } catch (e) {}
-      } else if (container) {
-        container.innerHTML = '<p class="loading-text">読み込み中...</p>';
-      }
-
+    /* --- 即時画面反映・バックグラウンド取得 --- */
+    async function fetchTransactionsSilently(showNotice = false) {
+      if (showNotice) showToast('最新情報を読み込んでいます...');
       try {
         const res = await fetch(`${API_URL}?endpoint=/transactions`);
         const json = await res.json();
@@ -476,6 +493,7 @@
           renderHistoryList();
           initYearOptions();
           renderSummary();
+          if (showNotice) showToast('最新情報に更新しました');
         }
       } catch (err) {
         console.error('履歴取得エラー:', err);
@@ -536,7 +554,7 @@
       container.innerHTML = html;
     }
 
-    /* --- 定期支出（固定費）処理 --- */
+    /* --- 定期支出 --- */
     function addRecurringItem(e) {
       e.preventDefault();
       const title = document.getElementById('rec-title').value.trim();
@@ -638,7 +656,7 @@
       }
     }
 
-    /* --- 集計機能 --- */
+    /* --- 集計 --- */
     function setSummaryMode(mode) {
       summaryMode = mode;
       document.getElementById('btn-mode-year').classList.toggle('active', mode === 'year');
@@ -717,7 +735,6 @@
 
         if (item.type === 'income') {
           totalIncome += amt;
-          // カテゴリ名に「給与」または「賞与」が含まれている場合に年収カウント
           if (catName.includes('給与') || catName.includes('賞与')) {
             totalAnnualSalary += amt;
             const owner = item.owner || '未設定';
@@ -736,7 +753,6 @@
       document.getElementById('sum-balance').innerText = `${balance >= 0 ? '+' : ''}¥${balance.toLocaleString()}`;
       document.getElementById('sum-annual-salary').innerText = `¥${totalAnnualSalary.toLocaleString()}`;
 
-      // 人別年収内訳（給与・賞与）
       const ownerEl = document.getElementById('owner-salary-breakdown');
       if (ownerEl) {
         const entries = Object.entries(ownerSalaryTotals);
@@ -747,7 +763,6 @@
         }
       }
 
-      // カテゴリ内訳
       const breakdownContainer = document.getElementById('category-breakdown-list');
       if (!breakdownContainer) return;
 
@@ -774,7 +789,7 @@
       }).join('');
     }
 
-    /* --- 登録・編集・削除 --- */
+    /* --- 編集・登録・削除（即時ローカル同期付き） --- */
     function startEditTransaction(id) {
       const item = currentTransactions.find(t => String(t.id) === String(id));
       if (!item) return;
@@ -787,7 +802,7 @@
       toggleIncomeFields();
 
       if (item.type === 'income') {
-        document.getElementById('input-owner').value = item.owner || '';
+        document.getElementById('input-owner').value = item.owner || '雄太';
       }
 
       document.getElementById('input-category').value = item.category_id;
@@ -816,31 +831,44 @@
       if (e) e.preventDefault();
 
       const type = document.getElementById('input-type').value;
-      const owner = document.getElementById('input-owner').value.trim();
-
-      if (type === 'income' && !owner) {
-        alert('収入を入力する場合は「収入者名」を入力してください。');
-        return;
-      }
+      const owner = document.getElementById('input-owner').value;
 
       const submitBtn = document.getElementById('submit-btn');
       submitBtn.disabled = true;
-      submitBtn.innerText = '送信中...';
+      submitBtn.innerText = '保存中...';
+
+      const transactionData = {
+        id: editingTransactionId || ('tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+        date: document.getElementById('input-date').value,
+        amount: Number(document.getElementById('input-amount').value),
+        type: type,
+        owner: type === 'income' ? owner : '',
+        category_id: document.getElementById('input-category').value,
+        tags: document.getElementById('input-tags').value.trim(),
+        store_id: document.getElementById('input-store').value,
+        memo: document.getElementById('input-memo').value
+      };
+
+      // 即座に画面＆ローカルキャッシュへ反映
+      if (editingTransactionId) {
+        const idx = currentTransactions.findIndex(t => String(t.id) === String(editingTransactionId));
+        if (idx !== -1) {
+          currentTransactions[idx] = transactionData;
+        } else {
+          currentTransactions.push(transactionData);
+        }
+      } else {
+        currentTransactions.push(transactionData);
+      }
+
+      localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(currentTransactions));
+      renderHistoryList();
+      renderSummary();
 
       const payload = {
         endpoint: '/transactions',
         method: 'POST',
-        data: {
-          id: editingTransactionId,
-          date: document.getElementById('input-date').value,
-          amount: Number(document.getElementById('input-amount').value),
-          type: type,
-          owner: type === 'income' ? owner : '',
-          category_id: document.getElementById('input-category').value,
-          tags: document.getElementById('input-tags').value.trim(),
-          store_id: document.getElementById('input-store').value,
-          memo: document.getElementById('input-memo').value
-        }
+        data: transactionData
       };
 
       try {
@@ -852,27 +880,32 @@
 
         const json = await res.json();
         if (json.success) {
-          showToast(editingTransactionId ? '更新しました' : '登録しました');
-          resetForm();
-          await fetchTransactions();
-          switchTab('history');
-        } else {
-          alert('エラーが発生しました');
+          showToast(editingTransactionId ? '更新完了しました' : '登録完了しました');
         }
       } catch (err) {
         console.error(err);
-        alert('通信エラーが発生しました');
+        showToast('通信エラーが発生しましたがローカルに保存されました');
       } finally {
+        resetForm();
+        switchTab('history');
         submitBtn.disabled = false;
-        submitBtn.innerText = editingTransactionId ? '変更を保存する' : '登録する';
+        submitBtn.innerText = '登録する';
       }
     }
 
     async function deleteTransaction(id) {
       if (!confirm('この明細を削除してもよろしいですか？')) return;
 
+      // 即座に画面＆ローカルキャッシュから削除
+      currentTransactions = currentTransactions.filter(t => String(t.id) !== String(id));
+      localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(currentTransactions));
+      renderHistoryList();
+      renderSummary();
+
+      showToast('削除しました');
+
       try {
-        const res = await fetch(API_URL, {
+        await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify({
@@ -881,17 +914,8 @@
             data: { id: id }
           })
         });
-
-        const json = await res.json();
-        if (json.success) {
-          showToast('削除しました');
-          await fetchTransactions();
-        } else {
-          alert('削除に失敗しました');
-        }
       } catch (err) {
         console.error(err);
-        alert('通信エラーが発生しました');
       }
     }
 
