@@ -759,187 +759,176 @@
         if (entries.length > 0) {
           ownerEl.innerHTML = '内訳: ' + entries.map(([name, val]) => `${escapeHtml(name)}: ¥${val.toLocaleString()}`).join(' / ');
         } else {
-          ownerEl.innerText = '※該当期間の給与・賞与データはありません';
+          ownerEl.innerHTML = '';
         }
       }
 
       const breakdownContainer = document.getElementById('category-breakdown-list');
-      if (!breakdownContainer) return;
-
-      const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
-
-      if (sortedCategories.length === 0) {
-        breakdownContainer.innerHTML = '<p class="empty-text">支出データがありません</p>';
-        return;
+      if (breakdownContainer) {
+        const sortedCats = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+        if (sortedCats.length === 0) {
+          breakdownContainer.innerHTML = '<p class="empty-text">支出データはありません</p>';
+        } else {
+          breakdownContainer.innerHTML = sortedCats.map(([name, amt]) => {
+            const percent = totalExpense > 0 ? Math.round((amt / totalExpense) * 100) : 0;
+            return `
+              <div class="breakdown-item">
+                <div class="breakdown-header">
+                  <span>${escapeHtml(name)}</span>
+                  <span>¥${amt.toLocaleString()} (${percent}%)</span>
+                </div>
+                <div class="progress-bg">
+                  <div class="progress-fill" style="width: ${percent}%;"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
       }
-
-      breakdownContainer.innerHTML = sortedCategories.map(([catName, amount]) => {
-        const percent = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
-        return `
-          <div class="breakdown-item">
-            <div class="breakdown-header">
-              <span>${escapeHtml(catName)} (${percent}%)</span>
-              <span style="color: var(--expense);">¥${amount.toLocaleString()}</span>
-            </div>
-            <div class="progress-bg">
-              <div class="progress-fill" style="width: ${percent}%;"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
     }
 
-    /* --- 編集・登録・削除（即時ローカル同期付き） --- */
+    /* --- 登録・編集・削除 --- */
+    async function saveTransaction(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = '処理中...';
+
+      const date = document.getElementById('input-date').value;
+      const type = document.getElementById('input-type').value;
+      const owner = type === 'income' ? document.getElementById('input-owner').value : '';
+      const amount = Number(document.getElementById('input-amount').value);
+      const category_id = document.getElementById('input-category').value;
+      const tags = document.getElementById('input-tags').value.trim();
+      const store_id = document.getElementById('input-store').value.trim();
+      const memo = document.getElementById('input-memo').value.trim();
+
+      const id = editingTransactionId || ('tx_' + Date.now());
+
+      const payload = { id, date, type, owner, amount, category_id, tags, store_id, memo };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ endpoint: '/transactions', method: editingTransactionId ? 'PUT' : 'POST', data: payload })
+        });
+        const json = await res.json();
+        if (json.success) {
+          if (editingTransactionId) {
+            currentTransactions = currentTransactions.map(t => t.id === editingTransactionId ? payload : t);
+            showToast('履歴を更新しました');
+          } else {
+            currentTransactions.push(payload);
+            showToast('履歴を登録しました');
+          }
+          localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(currentTransactions));
+          resetForm();
+          renderHistoryList();
+          initYearOptions();
+          renderSummary();
+          switchTab('history');
+        } else {
+          alert('保存に失敗しました: ' + (json.error || '不明なエラー'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('通信エラーが発生しました');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = '登録する';
+      }
+    }
+
     function startEditTransaction(id) {
       const item = currentTransactions.find(t => String(t.id) === String(id));
       if (!item) return;
 
       editingTransactionId = item.id;
-
-      document.getElementById('input-date').value = item.date;
-      document.getElementById('input-amount').value = item.amount;
+      document.getElementById('input-date').value = item.date || '';
       document.getElementById('input-type').value = item.type || 'expense';
       toggleIncomeFields();
 
-      if (item.type === 'income') {
-        document.getElementById('input-owner').value = item.owner || '雄太';
+      if (item.type === 'income' && item.owner) {
+        document.getElementById('input-owner').value = item.owner;
       }
 
-      document.getElementById('input-category').value = item.category_id;
+      document.getElementById('input-amount').value = item.amount || '';
+      document.getElementById('input-category').value = item.category_id || '';
       document.getElementById('input-tags').value = item.tags || '';
       document.getElementById('input-store').value = item.store_id || '';
       document.getElementById('input-memo').value = item.memo || '';
 
-      document.getElementById('submit-btn').innerText = '変更を保存する';
-      document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+      document.getElementById('submit-btn').innerText = '更新する';
+      document.getElementById('cancel-edit-btn').style.display = 'block';
 
       switchTab('input');
-      showToast('編集モードに切り替えました');
     }
 
     function resetForm() {
       editingTransactionId = null;
       document.getElementById('kakeibo-form').reset();
       document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('input-type').value = 'expense';
       toggleIncomeFields();
-
       document.getElementById('submit-btn').innerText = '登録する';
       document.getElementById('cancel-edit-btn').style.display = 'none';
     }
 
-    async function saveTransaction(e) {
-      if (e) e.preventDefault();
-
-      const type = document.getElementById('input-type').value;
-      const owner = document.getElementById('input-owner').value;
-
-      const submitBtn = document.getElementById('submit-btn');
-      submitBtn.disabled = true;
-      submitBtn.innerText = '保存中...';
-
-      const transactionData = {
-        id: editingTransactionId || ('tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
-        date: document.getElementById('input-date').value,
-        amount: Number(document.getElementById('input-amount').value),
-        type: type,
-        owner: type === 'income' ? owner : '',
-        category_id: document.getElementById('input-category').value,
-        tags: document.getElementById('input-tags').value.trim(),
-        store_id: document.getElementById('input-store').value,
-        memo: document.getElementById('input-memo').value
-      };
-
-      // 即座に画面＆ローカルキャッシュへ反映
-      if (editingTransactionId) {
-        const idx = currentTransactions.findIndex(t => String(t.id) === String(editingTransactionId));
-        if (idx !== -1) {
-          currentTransactions[idx] = transactionData;
-        } else {
-          currentTransactions.push(transactionData);
-        }
-      } else {
-        currentTransactions.push(transactionData);
-      }
-
-      localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(currentTransactions));
-      renderHistoryList();
-      renderSummary();
-
-      const payload = {
-        endpoint: '/transactions',
-        method: 'POST',
-        data: transactionData
-      };
+    async function deleteTransaction(id) {
+      if (!confirm('本当にこの履歴を削除しますか？')) return;
 
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ endpoint: '/transactions', method: 'DELETE', data: { id } })
         });
-
         const json = await res.json();
         if (json.success) {
-          showToast(editingTransactionId ? '更新完了しました' : '登録完了しました');
+          currentTransactions = currentTransactions.filter(t => String(t.id) !== String(id));
+          localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(currentTransactions));
+          renderHistoryList();
+          initYearOptions();
+          renderSummary();
+          showToast('履歴を削除しました');
+        } else {
+          alert('削除に失敗しました');
         }
       } catch (err) {
         console.error(err);
-        showToast('通信エラーが発生しましたがローカルに保存されました');
-      } finally {
-        resetForm();
-        switchTab('history');
-        submitBtn.disabled = false;
-        submitBtn.innerText = '登録する';
-      }
-    }
-
-    async function deleteTransaction(id) {
-      if (!confirm('この明細を削除してもよろしいですか？')) return;
-
-      // 即座に画面＆ローカルキャッシュから削除
-      currentTransactions = currentTransactions.filter(t => String(t.id) !== String(id));
-      localStorage.setItem('kakeibo_transactions_cache', JSON.stringify(currentTransactions));
-      renderHistoryList();
-      renderSummary();
-
-      showToast('削除しました');
-
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({
-            endpoint: '/transactions/delete',
-            method: 'POST',
-            data: { id: id }
-          })
-        });
-      } catch (err) {
-        console.error(err);
+        alert('通信エラーが発生しました');
       }
     }
 
     function escapeHtml(str) {
       if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     function showToast(message) {
-      let toast = document.getElementById('toast');
+      let toast = document.getElementById('toast-notification');
       if (!toast) {
         toast = document.createElement('div');
-        toast.id = 'toast';
+        toast.id = 'toast-notification';
         toast.style.cssText = `
           position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-          background: rgba(15, 23, 42, 0.9); color: #fff; padding: 10px 20px;
-          border-radius: 20px; font-size: 0.85rem; font-weight: 600; z-index: 9999;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: opacity 0.3s;
+          background: rgba(15, 23, 42, 0.9); color: white; padding: 10px 20px;
+          border-radius: 20px; font-size: 0.85rem; z-index: 1000;
+          transition: opacity 0.3s; opacity: 0; pointer-events: none;
         `;
         document.body.appendChild(toast);
       }
       toast.innerText = message;
       toast.style.opacity = '1';
-      setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+      }, 2500);
     }
   </script>
 </body>
