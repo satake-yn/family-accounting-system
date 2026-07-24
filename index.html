@@ -16,8 +16,8 @@
       --accent-color: #3182ce;
       --danger-color: #e53e3e;
       --success-color: #38a169;
-      --radius: 12px;
-      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --radius: 10px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     * {
@@ -31,44 +31,37 @@
       background-color: var(--bg-color);
       color: var(--text-color);
       line-height: 1.6;
-      padding: 24px 16px;
+      padding-bottom: 40px;
       font-size: 16px;
     }
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
+    /* 上部固定タブナビゲーション */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background-color: #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 16px 0 16px;
     }
 
-    header {
-      margin-bottom: 24px;
-      text-align: center;
-    }
-
-    header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--primary-hover);
-    }
-
-    /* タブナビゲーション */
     .tabs {
       display: flex;
       gap: 8px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--border-color);
-      padding-bottom: 4px;
+      max-width: 1000px;
+      margin: 0 auto;
       overflow-x: auto;
     }
 
     .tab-btn {
-      padding: 12px 20px;
+      padding: 14px 20px;
       font-size: 16px;
       font-weight: 600;
       color: var(--text-muted);
       background: none;
       border: none;
-      border-radius: var(--radius) var(--radius) 0 0;
+      border-bottom: 3px solid transparent;
       cursor: pointer;
       transition: all 0.2s ease;
       white-space: nowrap;
@@ -76,8 +69,14 @@
 
     .tab-btn.active {
       color: var(--accent-color);
-      border-bottom: 3px solid var(--accent-color);
-      background-color: #edf2f7;
+      border-bottom-color: var(--accent-color);
+      background-color: #f7fafc;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 20px auto 0 auto;
+      padding: 0 16px;
     }
 
     .tab-content {
@@ -88,30 +87,40 @@
       display: block;
     }
 
-    /* カード・フォームスタイル */
+    /* カード・フォーム */
     .card {
       background-color: var(--card-bg);
       border-radius: var(--radius);
-      padding: 24px;
+      padding: 20px 24px;
       box-shadow: var(--shadow);
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .card h2 {
-      font-size: 20px;
-      margin-bottom: 20px;
+      font-size: 18px;
+      margin-bottom: 16px;
       color: var(--primary-color);
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 8px;
     }
 
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
     .form-group {
-      margin-bottom: 18px;
+      margin-bottom: 14px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
     }
 
     .form-group label {
       display: block;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       margin-bottom: 6px;
       color: var(--primary-color);
@@ -120,203 +129,178 @@
     .required {
       color: var(--danger-color);
       margin-left: 4px;
-      font-weight: bold;
     }
 
     input[type="text"],
     input[type="number"],
     input[type="date"],
-    select,
-    textarea {
+    select {
       width: 100%;
-      padding: 12px 14px;
-      font-size: 16px;
+      padding: 10px 12px;
+      font-size: 15px;
       border: 1px solid var(--border-color);
-      border-radius: 8px;
+      border-radius: 6px;
       background-color: #fafafa;
       color: var(--text-color);
-      transition: border-color 0.2s ease;
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus, select:focus {
       outline: none;
       border-color: var(--accent-color);
-      background-color: #ffffff;
+      background-color: #fff;
     }
 
-    /* ボタン類 */
+    /* ボタン */
     .btn-group {
       display: flex;
       gap: 12px;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px 24px;
-      font-size: 16px;
+      padding: 12px 20px;
+      font-size: 15px;
       font-weight: 600;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.2s ease;
-      min-height: 48px;
+      transition: background-color 0.2s;
+      min-height: 44px;
     }
 
-    .btn-primary {
-      background-color: var(--primary-color);
-      color: #ffffff;
-      width: 100%;
+    .btn-primary { background-color: var(--primary-color); color: #fff; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-danger { background-color: var(--danger-color); color: #fff; }
+    .btn-secondary { background-color: #cbd5e0; color: var(--text-color); }
+
+    /* サマリーカード (集計) */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
     }
 
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
+    .summary-card {
+      background: #ffffff;
+      padding: 18px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border-left: 5px solid var(--primary-color);
     }
 
-    .btn-danger {
-      background-color: var(--danger-color);
-      color: #ffffff;
-    }
+    .summary-card.income { border-left-color: var(--success-color); }
+    .summary-card.expense { border-left-color: var(--danger-color); }
+    .summary-card.balance { border-left-color: var(--accent-color); }
 
-    .btn-danger:hover {
-      background-color: #c53030;
-    }
+    .summary-card .label { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+    .summary-card .amount { font-size: 24px; font-weight: 700; margin-top: 4px; }
 
-    .btn-secondary {
-      background-color: #cbd5e0;
-      color: var(--text-color);
-    }
-
-    .btn-secondary:hover {
-      background-color: #a0aec0;
-    }
-
-    /* テーブル・リスト表示 */
-    .table-responsive {
-      overflow-x: auto;
-    }
+    /* テーブル */
+    .table-responsive { overflow-x: auto; }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 15px;
+      margin-top: 8px;
+      font-size: 14px;
     }
 
     th, td {
-      padding: 14px 12px;
+      padding: 12px;
       text-align: left;
       border-bottom: 1px solid var(--border-color);
     }
 
-    th {
-      background-color: #edf2f7;
-      color: var(--primary-color);
-      font-weight: 600;
-    }
+    th { background-color: #edf2f7; color: var(--primary-color); font-weight: 600; }
+    tr:hover { background-color: #f7fafc; }
 
-    tr:hover {
-      background-color: #f7fafc;
-    }
+    .action-btns { display: flex; gap: 6px; }
+    .btn-sm { padding: 4px 10px; font-size: 13px; min-height: auto; }
 
-    .action-btns {
-      display: flex;
-      gap: 6px;
-    }
-
-    .btn-sm {
-      padding: 6px 12px;
-      font-size: 14px;
-      min-height: auto;
-      border-radius: 6px;
-    }
-
-    /* 通知メッセージ */
+    /* メッセージ・ローディング */
     .message-box {
       padding: 12px 16px;
-      border-radius: 8px;
+      border-radius: 6px;
       margin-bottom: 16px;
       display: none;
-      font-size: 15px;
+      font-size: 14px;
+    }
+    .message-box.success { background-color: #c6f6d5; color: #22543d; display: block; }
+    .message-box.error { background-color: #fed7d7; color: #742a2a; display: block; }
+
+    .hidden { display: none !important; }
+
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
     }
 
-    .message-box.success {
-      background-color: #c6f6d5;
-      color: #22543d;
-      display: block;
-    }
-
-    .message-box.error {
-      background-color: #fed7d7;
-      color: #742a2a;
-      display: block;
-    }
-
-    /* 非表示コントロール */
-    .hidden {
-      display: none !important;
-    }
+    .filter-bar label { font-weight: 600; font-size: 14px; }
+    .filter-bar select, .filter-bar input { width: auto; min-width: 140px; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <h1>家計管理システム</h1>
-    </header>
+  <!-- スクロールしても隠れない固定タブ -->
+  <div class="sticky-header">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('transactionTab', this)">収支入力・履歴</button>
+      <button class="tab-btn" onclick="switchTab('summaryTab', this)">集計・分析レポート</button>
+      <button class="tab-btn" onclick="switchTab('recurringTab', this)">定期収支設定</button>
+      <button class="tab-btn" onclick="switchTab('categoryTab', this)">分類項目設定</button>
+    </div>
+  </div>
 
+  <div class="container">
     <div id="messageBox" class="message-box"></div>
 
-    <!-- タブメニュー -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('transactionTab')">収支登録・履歴</button>
-      <button class="tab-btn" onclick="switchTab('recurringTab')">定期収支管理</button>
-      <button class="tab-btn" onclick="switchTab('categoryTab')">分類項目設定</button>
-    </div>
-
-    <!-- 1. 収支登録・履歴タブ -->
+    <!-- 1. 収支入力・履歴タブ -->
     <div id="transactionTab" class="tab-content active">
       <div class="card">
-        <h2 id="formTitle">収支データの新規登録</h2>
+        <h2 id="formTitle">収支の新規登録</h2>
         <form id="transactionForm" onsubmit="handleTransactionSubmit(event)">
           <input type="hidden" id="transId" value="">
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label>日付<span class="required">*</span></label>
+              <input type="date" id="transDate" required>
+            </div>
 
-          <div class="form-group">
-            <label>日付<span class="required">*</span></label>
-            <input type="date" id="transDate" required>
-          </div>
+            <div class="form-group">
+              <label>収支種別<span class="required">*</span></label>
+              <select id="transType" onchange="toggleIncomeRecipientField()" required>
+                <option value="支出">支出</option>
+                <option value="収入">収入</option>
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label>収支種別<span class="required">*</span></label>
-            <select id="transType" onchange="toggleIncomeRecipientField()" required>
-              <option value="支出">支出</option>
-              <option value="収入">収入</option>
-            </select>
-          </div>
+            <!-- 収入入力時のみ動的表示 -->
+            <div class="form-group hidden" id="incomeRecipientGroup">
+              <label>収入取得者<span class="required">*</span></label>
+              <input type="text" id="incomeRecipient" placeholder="例: 夫、妻">
+            </div>
 
-          <!-- 収入時のみ表示される動的フィールド -->
-          <div class="form-group hidden" id="incomeRecipientGroup">
-            <label>収入取得者<span class="required">*</span></label>
-            <input type="text" id="incomeRecipient" placeholder="例: 夫、妻">
-          </div>
+            <div class="form-group">
+              <label>分類項目<span class="required">*</span></label>
+              <select id="transCategory" required>
+                <option value="">選択してください</option>
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label>分類項目<span class="required">*</span></label>
-            <select id="transCategory" required>
-              <option value="">選択してください</option>
-            </select>
-          </div>
+            <div class="form-group">
+              <label>金額 (円)<span class="required">*</span></label>
+              <input type="number" id="transAmount" min="1" placeholder="1000" required>
+            </div>
 
-          <div class="form-group">
-            <label>金額 (円)<span class="required">*</span></label>
-            <input type="number" id="transAmount" min="1" placeholder="1000" required>
-          </div>
-
-          <div class="form-group">
-            <label>メモ・詳細</label>
-            <input type="text" id="transMemo" placeholder="スーパーでの買い物など">
+            <div class="form-group full-width">
+              <label>メモ</label>
+              <input type="text" id="transMemo" placeholder="詳細メモ">
+            </div>
           </div>
 
           <div class="btn-group">
@@ -342,50 +326,122 @@
               </tr>
             </thead>
             <tbody id="transactionTableBody">
-              <tr><td colspan="7">データを読み込み中...</td></tr>
+              <tr><td colspan="7">データをスプレッドシートから読み込んでいます...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- 2. 定期収支管理タブ -->
+    <!-- 2. 集計・分析レポートタブ -->
+    <div id="summaryTab" class="tab-content">
+      <div class="card">
+        <h2>集計期間の切替</h2>
+        <div class="filter-bar">
+          <label>表示単位:</label>
+          <select id="summaryMode" onchange="updateSummaryView()">
+            <option value="monthly">月間集計</option>
+            <option value="yearly">年間集計 (月別推移)</option>
+            <option value="multiYear">年推移</option>
+          </select>
+
+          <label id="yearFilterLabel">対象年:</label>
+          <select id="summaryYear" onchange="renderSummary()"></select>
+
+          <label id="monthFilterLabel">対象月:</label>
+          <select id="summaryMonth" onchange="renderSummary()"></select>
+        </div>
+      </div>
+
+      <!-- サマリーカード -->
+      <div class="summary-cards">
+        <div class="summary-card income">
+          <div class="label" id="labelIncome">収入総額</div>
+          <div class="amount" id="summaryIncomeAmount">¥0</div>
+        </div>
+        <div class="summary-card expense">
+          <div class="label" id="labelExpense">支出総額</div>
+          <div class="amount" id="summaryExpenseAmount">¥0</div>
+        </div>
+        <div class="summary-card balance">
+          <div class="label" id="labelBalance">収支差額</div>
+          <div class="amount" id="summaryBalanceAmount">¥0</div>
+        </div>
+      </div>
+
+      <!-- 分類別支出 内訳 -->
+      <div class="card">
+        <h2>分類別支出内訳</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>分類項目</th>
+                <th>金額</th>
+                <th>割合</th>
+              </tr>
+            </thead>
+            <tbody id="categoryBreakdownTable">
+              <tr><td colspan="3">データがありません</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 時系列推移テーブル -->
+      <div class="card" id="trendCard">
+        <h2 id="trendTitle">推移内訳</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr id="trendTableHeader">
+                <th>期間</th>
+                <th>収入</th>
+                <th>支出</th>
+                <th>収支</th>
+              </tr>
+            </thead>
+            <tbody id="trendTableBody">
+              <tr><td colspan="4">データがありません</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 定期収支設定タブ -->
     <div id="recurringTab" class="tab-content">
       <div class="card">
         <h2 id="recurringFormTitle">定期収支の新規登録</h2>
         <form id="recurringForm" onsubmit="handleRecurringSubmit(event)">
           <input type="hidden" id="recId" value="">
-
-          <div class="form-group">
-            <label>名称<span class="required">*</span></label>
-            <input type="text" id="recName" placeholder="例: 家賃、給与" required>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>名称<span class="required">*</span></label>
+              <input type="text" id="recName" placeholder="例: 家賃、給与" required>
+            </div>
+            <div class="form-group">
+              <label>収支種別<span class="required">*</span></label>
+              <select id="recType" required>
+                <option value="支出">支出</option>
+                <option value="収入">収入</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>分類項目<span class="required">*</span></label>
+              <select id="recCategory" required>
+                <option value="">選択してください</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>金額 (円)<span class="required">*</span></label>
+              <input type="number" id="recAmount" min="1" placeholder="80000" required>
+            </div>
+            <div class="form-group">
+              <label>毎月の決済日(日)<span class="required">*</span></label>
+              <input type="number" id="recDay" min="1" max="31" placeholder="25" required>
+            </div>
           </div>
-
-          <div class="form-group">
-            <label>収支種別<span class="required">*</span></label>
-            <select id="recType" required>
-              <option value="支出">支出</option>
-              <option value="収入">収入</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>分類項目<span class="required">*</span></label>
-            <select id="recCategory" required>
-              <option value="">選択してください</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>金額 (円)<span class="required">*</span></label>
-            <input type="number" id="recAmount" min="1" placeholder="80000" required>
-          </div>
-
-          <div class="form-group">
-            <label>毎月の決済日(日)<span class="required">*</span></label>
-            <input type="number" id="recDay" min="1" max="31" placeholder="25" required>
-          </div>
-
           <div class="btn-group">
             <button type="submit" class="btn btn-primary" id="recSubmitBtn">定期収支を保存</button>
             <button type="button" class="btn btn-secondary hidden" id="recCancelBtn" onclick="resetRecurringForm()">キャンセル</button>
@@ -408,29 +464,31 @@
               </tr>
             </thead>
             <tbody id="recurringTableBody">
-              <tr><td colspan="6">データを読み込み中...</td></tr>
+              <tr><td colspan="6">データを読み込んでいます...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- 3. 分類項目設定タブ -->
+    <!-- 4. 分類項目設定タブ -->
     <div id="categoryTab" class="tab-content">
       <div class="card">
         <h2>新規分類項目の追加</h2>
         <form id="categoryForm" onsubmit="handleCategorySubmit(event)">
-          <div class="form-group">
-            <label>分類項目名<span class="required">*</span></label>
-            <input type="text" id="newCategoryName" placeholder="例: 食費、通信費" required>
-          </div>
-          <div class="form-group">
-            <label>対象種別<span class="required">*</span></label>
-            <select id="categoryType" required>
-              <option value="共通">共通 (収入・支出両方)</option>
-              <option value="支出">支出専用</option>
-              <option value="収入">収入専用</option>
-            </select>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>分類項目名<span class="required">*</span></label>
+              <input type="text" id="newCategoryName" placeholder="例: 食費、通信費" required>
+            </div>
+            <div class="form-group">
+              <label>対象種別<span class="required">*</span></label>
+              <select id="categoryType" required>
+                <option value="共通">共通</option>
+                <option value="支出">支出専用</option>
+                <option value="収入">収入専用</option>
+              </select>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary">分類項目を追加</button>
         </form>
@@ -448,7 +506,7 @@
               </tr>
             </thead>
             <tbody id="categoryTableBody">
-              <tr><td colspan="3">データを読み込み中...</td></tr>
+              <tr><td colspan="3">データを読み込んでいます...</td></tr>
             </tbody>
           </table>
         </div>
@@ -458,15 +516,13 @@
   </div>
 
   <script>
-    // 状態管理
     let categories = [];
     let transactions = [];
     let recurrings = [];
 
-    // 初期化処理
     window.onload = function() {
-      // 本日の日付をデフォルト設定
       document.getElementById('transDate').valueAsDate = new Date();
+      initYearMonthFilters();
       loadAllData();
     };
 
@@ -474,53 +530,57 @@
       const box = document.getElementById('messageBox');
       box.textContent = msg;
       box.className = 'message-box ' + (isError ? 'error' : 'success');
-      setTimeout(() => {
-        box.className = 'message-box hidden';
-      }, 4000);
+      setTimeout(() => { box.className = 'message-box hidden'; }, 4000);
     }
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       
-      event.currentTarget.classList.add('active');
+      btn.classList.add('active');
       document.getElementById(tabId).classList.add('active');
-    }
 
-    // 収入取得者フィールドの表示切替
-    function toggleIncomeRecipientField() {
-      const type = document.getElementById('transType').value;
-      const recipientGroup = document.getElementById('incomeRecipientGroup');
-      const recipientInput = document.getElementById('incomeRecipient');
-
-      if (type === '収入') {
-        recipientGroup.classList.remove('hidden');
-        recipientInput.required = true;
-      } else {
-        recipientGroup.classList.add('hidden');
-        recipientInput.required = false;
-        recipientInput.value = '';
+      if (tabId === 'summaryTab') {
+        renderSummary();
       }
     }
 
-    // 全データロード
-    function loadAllData() {
-      google.script.run.withSuccessHandler(data => {
-        categories = data.categories || [];
-        transactions = data.transactions || [];
-        recurrings = data.recurrings || [];
-        
-        renderCategories();
-        renderTransactions();
-        renderRecurrings();
-      }).withFailureHandler(err => {
-        showMessage('データの読み込みに失敗しました: ' + err, true);
-      }).getInitialData();
+    function toggleIncomeRecipientField() {
+      const type = document.getElementById('transType').value;
+      const group = document.getElementById('incomeRecipientGroup');
+      const input = document.getElementById('incomeRecipient');
+
+      if (type === '収入') {
+        group.classList.remove('hidden');
+        input.required = true;
+      } else {
+        group.classList.add('hidden');
+        input.required = false;
+        input.value = '';
+      }
     }
 
-    // --- 分類項目マスター関連 ---
+    // データ読み込み（GASとの非同期通信）
+    function loadAllData() {
+      google.script.run
+        .withSuccessHandler(data => {
+          categories = data.categories || [];
+          transactions = data.transactions || [];
+          recurrings = data.recurrings || [];
+
+          renderCategories();
+          renderTransactions();
+          renderRecurrings();
+          renderSummary();
+        })
+        .withFailureHandler(err => {
+          showMessage('スプレッドシートからのデータ取得に失敗しました: ' + err, true);
+        })
+        .getInitialData();
+    }
+
+    // --- 分類マスター ---
     function renderCategories() {
-      // ドロップダウン更新
       const transCatSelect = document.getElementById('transCategory');
       const recCatSelect = document.getElementById('recCategory');
       
@@ -539,10 +599,9 @@
         recCatSelect.appendChild(opt2);
       });
 
-      // 一覧テーブル更新
       const tbody = document.getElementById('categoryTableBody');
       if (categories.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3">登録された分類項目がありません</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3">分類項目がありません</td></tr>';
         return;
       }
 
@@ -550,9 +609,7 @@
         <tr>
           <td>${cat.name}</td>
           <td>${cat.type || '共通'}</td>
-          <td>
-            <button class="btn btn-danger btn-sm" onclick="deleteCategory('${cat.id}')">削除</button>
-          </td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteCategory('${cat.id}')">削除</button></td>
         </tr>
       `).join('');
     }
@@ -562,37 +619,28 @@
       const name = document.getElementById('newCategoryName').value.trim();
       const type = document.getElementById('categoryType').value;
 
-      if (!name) return;
-
       google.script.run.withSuccessHandler(res => {
         if (res.success) {
           showMessage('分類項目を追加しました');
           document.getElementById('categoryForm').reset();
           loadAllData();
-        } else {
-          showMessage(res.message, true);
-        }
+        } else showMessage(res.message, true);
       }).addCategory({ name, type });
     }
 
     function deleteCategory(id) {
-      if (!confirm('この分類項目を削除してもよろしいですか？')) return;
-
+      if (!confirm('削除してよろしいですか？')) return;
       google.script.run.withSuccessHandler(res => {
-        if (res.success) {
-          showMessage('分類項目を削除しました');
-          loadAllData();
-        } else {
-          showMessage(res.message, true);
-        }
+        if (res.success) { showMessage('削除しました'); loadAllData(); }
+        else showMessage(res.message, true);
       }).deleteCategory(id);
     }
 
-    // --- 収支データ関連 ---
+    // --- 収支データ ---
     function renderTransactions() {
       const tbody = document.getElementById('transactionTableBody');
       if (transactions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">収支データがありません</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">データがありません</td></tr>';
         return;
       }
 
@@ -618,28 +666,24 @@
       e.preventDefault();
       const id = document.getElementById('transId').value;
       const type = document.getElementById('transType').value;
-      const recipient = type === '収入' ? document.getElementById('incomeRecipient').value : '';
 
       const payload = {
         id: id || null,
         date: document.getElementById('transDate').value,
         type: type,
-        recipient: recipient,
+        recipient: type === '収入' ? document.getElementById('incomeRecipient').value : '',
         category: document.getElementById('transCategory').value,
         amount: Number(document.getElementById('transAmount').value),
         memo: document.getElementById('transMemo').value
       };
 
       const funcName = id ? 'updateTransaction' : 'addTransaction';
-
       google.script.run.withSuccessHandler(res => {
         if (res.success) {
-          showMessage(id ? '収支データを更新しました' : '収支データを追加しました');
+          showMessage(id ? '更新しました' : '追加しました');
           resetTransactionForm();
           loadAllData();
-        } else {
-          showMessage(res.message, true);
-        }
+        } else showMessage(res.message, true);
       })[funcName](payload);
     }
 
@@ -650,12 +694,8 @@
       document.getElementById('transId').value = item.id;
       document.getElementById('transDate').value = item.date;
       document.getElementById('transType').value = item.type;
-      
       toggleIncomeRecipientField();
-      if (item.type === '収入') {
-        document.getElementById('incomeRecipient').value = item.recipient || '';
-      }
-
+      if (item.type === '収入') document.getElementById('incomeRecipient').value = item.recipient || '';
       document.getElementById('transCategory').value = item.category;
       document.getElementById('transAmount').value = item.amount;
       document.getElementById('transMemo').value = item.memo || '';
@@ -663,38 +703,31 @@
       document.getElementById('formTitle').textContent = '収支データの編集';
       document.getElementById('transSubmitBtn').textContent = '更新する';
       document.getElementById('transCancelBtn').classList.remove('hidden');
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function resetTransactionForm() {
       document.getElementById('transId').value = '';
       document.getElementById('transactionForm').reset();
       document.getElementById('transDate').valueAsDate = new Date();
-      document.getElementById('formTitle').textContent = '収支データの新規登録';
+      document.getElementById('formTitle').textContent = '収支の新規登録';
       document.getElementById('transSubmitBtn').textContent = '保存する';
       document.getElementById('transCancelBtn').classList.add('hidden');
       toggleIncomeRecipientField();
     }
 
     function deleteTransaction(id) {
-      if (!confirm('この収支データを削除しますか？')) return;
-
+      if (!confirm('削除してよろしいですか？')) return;
       google.script.run.withSuccessHandler(res => {
-        if (res.success) {
-          showMessage('収支データを削除しました');
-          loadAllData();
-        } else {
-          showMessage(res.message, true);
-        }
+        if (res.success) { showMessage('削除しました'); loadAllData(); }
+        else showMessage(res.message, true);
       }).deleteTransaction(id);
     }
 
-    // --- 定期収支関連 ---
+    // --- 定期収支 ---
     function renderRecurrings() {
       const tbody = document.getElementById('recurringTableBody');
       if (recurrings.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6">定期収支が登録されていません</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">データがありません</td></tr>';
         return;
       }
 
@@ -721,7 +754,7 @@
 
       const payload = {
         id: id || null,
-        name: document.getElementById('recName').value.trim(),
+        name: document.getElementById('recName').value,
         type: document.getElementById('recType').value,
         category: document.getElementById('recCategory').value,
         amount: Number(document.getElementById('recAmount').value),
@@ -729,15 +762,12 @@
       };
 
       const funcName = id ? 'updateRecurring' : 'addRecurring';
-
       google.script.run.withSuccessHandler(res => {
         if (res.success) {
-          showMessage(id ? '定期収支を更新しました' : '定期収支を登録しました');
+          showMessage(id ? '更新しました' : '登録しました');
           resetRecurringForm();
           loadAllData();
-        } else {
-          showMessage(res.message, true);
-        }
+        } else showMessage(res.message, true);
       })[funcName](payload);
     }
 
@@ -766,16 +796,176 @@
     }
 
     function deleteRecurring(id) {
-      if (!confirm('この定期収支項目を削除しますか？')) return;
-
+      if (!confirm('削除してよろしいですか？')) return;
       google.script.run.withSuccessHandler(res => {
-        if (res.success) {
-          showMessage('定期収支を削除しました');
-          loadAllData();
-        } else {
-          showMessage(res.message, true);
-        }
+        if (res.success) { showMessage('削除しました'); loadAllData(); }
+        else showMessage(res.message, true);
       }).deleteRecurring(id);
+    }
+
+    // --- 集計・分析ロジック ---
+    function initYearMonthFilters() {
+      const now = new Date();
+      const yearSelect = document.getElementById('summaryYear');
+      const monthSelect = document.getElementById('summaryMonth');
+
+      yearSelect.innerHTML = '';
+      const currentYear = now.getFullYear();
+      for (let y = currentYear; y >= currentYear - 5; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y + '年';
+        yearSelect.appendChild(opt);
+      }
+
+      monthSelect.innerHTML = '';
+      for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m < 10 ? '0' + m : m;
+        opt.textContent = m + '月';
+        if (m === (now.getMonth() + 1)) opt.selected = true;
+        monthSelect.appendChild(opt);
+      }
+    }
+
+    function updateSummaryView() {
+      const mode = document.getElementById('summaryMode').value;
+      const monthLabel = document.getElementById('monthFilterLabel');
+      const monthSelect = document.getElementById('summaryMonth');
+      const yearLabel = document.getElementById('yearFilterLabel');
+      const yearSelect = document.getElementById('summaryYear');
+
+      if (mode === 'monthly') {
+        monthLabel.classList.remove('hidden');
+        monthSelect.classList.remove('hidden');
+        yearLabel.classList.remove('hidden');
+        yearSelect.classList.remove('hidden');
+      } else if (mode === 'yearly') {
+        monthLabel.classList.add('hidden');
+        monthSelect.classList.add('hidden');
+        yearLabel.classList.remove('hidden');
+        yearSelect.classList.remove('hidden');
+      } else {
+        monthLabel.classList.add('hidden');
+        monthSelect.classList.add('hidden');
+        yearLabel.classList.add('hidden');
+        yearSelect.classList.add('hidden');
+      }
+      renderSummary();
+    }
+
+    function renderSummary() {
+      const mode = document.getElementById('summaryMode').value;
+      const selectedYear = document.getElementById('summaryYear').value;
+      const selectedMonth = document.getElementById('summaryMonth').value;
+
+      let filtered = transactions;
+
+      if (mode === 'monthly') {
+        const prefix = `${selectedYear}-${selectedMonth}`;
+        filtered = transactions.filter(t => t.date && t.date.startsWith(prefix));
+      } else if (mode === 'yearly') {
+        filtered = transactions.filter(t => t.date && t.date.startsWith(selectedYear));
+      }
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+      let categoryMap = {};
+
+      filtered.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        if (t.type === '収入') {
+          totalIncome += amt;
+        } else if (t.type === '支出') {
+          totalExpense += amt;
+          categoryMap[t.category] = (categoryMap[t.category] || 0) + amt;
+        }
+      });
+
+      // ラベル更新
+      document.getElementById('labelIncome').textContent = mode === 'yearly' ? '年間収入 (年収)' : '収入総額';
+      document.getElementById('summaryIncomeAmount').textContent = '¥' + totalIncome.toLocaleString();
+      document.getElementById('summaryExpenseAmount').textContent = '¥' + totalExpense.toLocaleString();
+      
+      const balance = totalIncome - totalExpense;
+      const balanceEl = document.getElementById('summaryBalanceAmount');
+      balanceEl.textContent = '¥' + balance.toLocaleString();
+      balanceEl.style.color = balance >= 0 ? '#38a169' : '#e53e3e';
+
+      // 分類別内訳
+      const catBody = document.getElementById('categoryBreakdownTable');
+      if (totalExpense === 0) {
+        catBody.innerHTML = '<tr><td colspan="3">支出データがありません</td></tr>';
+      } else {
+        catBody.innerHTML = Object.keys(categoryMap).map(cat => {
+          const amt = categoryMap[cat];
+          const pct = ((amt / totalExpense) * 100).toFixed(1);
+          return `<tr><td>${cat}</td><td>¥${amt.toLocaleString()}</td><td>${pct}%</td></tr>`;
+        }).join('');
+      }
+
+      // 推移テーブル
+      renderTrendTable(mode, selectedYear);
+    }
+
+    function renderTrendTable(mode, selectedYear) {
+      const tbody = document.getElementById('trendTableBody');
+      const title = document.getElementById('trendTitle');
+
+      if (mode === 'monthly') {
+        title.textContent = '当月内訳';
+        tbody.innerHTML = '<tr><td colspan="4">月間集計表示中です</td></tr>';
+        return;
+      }
+
+      let groupMap = {};
+
+      if (mode === 'yearly') {
+        title.textContent = `${selectedYear}年 月別推移`;
+        for (let m = 1; m <= 12; m++) {
+          const key = `${selectedYear}-${m < 10 ? '0' + m : m}`;
+          groupMap[key] = { income: 0, expense: 0 };
+        }
+        transactions.forEach(t => {
+          if (t.date && t.date.startsWith(selectedYear)) {
+            const key = t.date.substring(0, 7);
+            if (groupMap[key]) {
+              if (t.type === '収入') groupMap[key].income += Number(t.amount);
+              if (t.type === '支出') groupMap[key].expense += Number(t.amount);
+            }
+          }
+        });
+      } else if (mode === 'multiYear') {
+        title.textContent = '年別推移';
+        transactions.forEach(t => {
+          if (t.date) {
+            const yr = t.date.substring(0, 4);
+            if (!groupMap[yr]) groupMap[yr] = { income: 0, expense: 0 };
+            if (t.type === '収入') groupMap[yr].income += Number(t.amount);
+            if (t.type === '支出') groupMap[yr].expense += Number(t.amount);
+          }
+        });
+      }
+
+      const keys = Object.keys(groupMap).sort();
+      if (keys.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">データがありません</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = keys.map(k => {
+        const inc = groupMap[k].income;
+        const exp = groupMap[k].expense;
+        const bal = inc - exp;
+        return `
+          <tr>
+            <td><strong>${k}</strong></td>
+            <td>¥${inc.toLocaleString()}</td>
+            <td>¥${exp.toLocaleString()}</td>
+            <td style="color:${bal >= 0 ? '#38a169' : '#e53e3e'}">¥${bal.toLocaleString()}</td>
+          </tr>
+        `;
+      }).join('');
     }
   </script>
 </body>
