@@ -31,7 +31,7 @@
       max-width: 400px;
     }
     .auth-box h2 { margin-bottom: 20px; font-size: 1.2rem; color: #333; }
-    .auth-box input[type="email"] {
+    .auth-box input {
       width: 100%;
       padding: 10px;
       margin-bottom: 15px;
@@ -65,7 +65,8 @@
   <div id="auth-container">
     <div class="auth-box">
       <h2>家計簿アプリ ログイン</h2>
-      <input type="email" id="email-input" placeholder="登録メールアドレスを入力" required>
+      <input type="email" id="email-input" placeholder="メールアドレスを入力" required>
+      <input type="password" id="pass-input" placeholder="パスコードを入力" required>
       <button onclick="checkAuth()">認証する</button>
       <div id="error-msg"></div>
     </div>
@@ -76,11 +77,14 @@
   </div>
 
   <script>
-    // デプロイしたGASのウェブアプリのURLを設定してください
+    // デプロイしたGASのウェブアプリのURL
     const gasAppUrl = 'https://script.google.com/macros/s/AKfycbxK7v_C2QmCFzcsuqx816z1XjiOaXYcPb4nj4sf1UN-A1MtK1qE5Dl7bX2QFBBOJdfkEg/exec';
 
-    // 先ほど確認できた正しいハッシュ値
-    const ALLOWED_HASH = "e96d78eef2512c692587effbd6aef33415c90f65a5ceace2432f78a2d899b465";
+    // メールアドレスのハッシュ
+    const ALLOWED_EMAIL_HASH = "e96d78eef2512c692587effbd6aef33415c90f65a5ceace2432f78a2d899b465";
+
+    // パスコードのハッシュ
+    const ALLOWED_PASS_HASH = "8b671a5f69f2010db0147fc2b60458df8a2641f238b97d1979b940902c668b55";
 
     async function sha256(text) {
       const msgBuffer = new TextEncoder().encode(text);
@@ -90,33 +94,34 @@
     }
 
     async function checkAuth() {
-      let emailInput = document.getElementById('email-input').value;
+      const emailInput = document.getElementById('email-input').value;
+      const passInput = document.getElementById('pass-input').value;
       const errorMsg = document.getElementById('error-msg');
       
-      if (!emailInput) {
-        errorMsg.textContent = 'メールアドレスを入力してください。';
+      if (!emailInput || !passInput) {
+        errorMsg.textContent = 'メールアドレスとパスコードを入力してください。';
         return;
       }
 
       errorMsg.textContent = '認証中...';
 
-      // 空白削除 ＆ 小文字化
       const normalizedEmail = emailInput.trim().toLowerCase();
-      const inputHash = await sha256(normalizedEmail);
+      const normalizedPass = passInput.trim();
 
-      if (inputHash === ALLOWED_HASH) {
-        // 認証成功：フォームを隠し、iframeにURLをセットしてアプリを表示
+      const inputEmailHash = await sha256(normalizedEmail);
+      const inputPassHash = await sha256(normalizedPass);
+
+      if (inputEmailHash === ALLOWED_EMAIL_HASH && inputPassHash === ALLOWED_PASS_HASH) {
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         
-        // GAS側と共通の合言葉をパラメータに含める
-        const secretKey = "my_super_secret_key_2026";
+        // ご指定いただいた合言葉を設定
+        const secretKey = "yn-setake-kakeibo-App_07";
+        
         const iframe = document.getElementById('gasiframe');
         iframe.src = `${gasAppUrl}?key=${secretKey}&email=${encodeURIComponent(normalizedEmail)}`;
       } else {
-        // 認証失敗
-        errorMsg.style.color = '#e74c3c';
-        errorMsg.textContent = 'このメールアドレスはアクセスが許可されていません。';
+        errorMsg.textContent = 'メールアドレスまたはパスコードが間違っています。';
       }
     }
   </script>
