@@ -96,7 +96,7 @@
 
       // GAS側にメールアドレスを投げて許可されているか確認する
       // （※GAS側で doGet または doPost でメールアドレスを受け取り、スプレッドシート等と照合して true/false を返す処理を想定）
-      fetch(`${gasAppUrl}?email=${encodeURIComponent(email)}`, {
+      fetch(`${gasAppUrl}?mode=api&email=${encodeURIComponent(email)}`, {
         method: 'GET',
       })
       .then(response => response.json())
