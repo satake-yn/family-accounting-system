@@ -95,7 +95,7 @@
     }
 
     async function checkAuth() {
-      const emailInput = document.getElementById('email-input').value;
+      let emailInput = document.getElementById('email-input').value;
       const errorMsg = document.getElementById('error-msg');
       
       if (!emailInput) {
@@ -105,8 +105,11 @@
 
       errorMsg.textContent = '認証中...';
 
-      // 入力されたメールアドレスをハッシュ化して比較
-      const inputHash = await sha256(emailInput);
+      // 【重要】前後の中途半端な空白（スペース）を削除し、すべて小文字に統一する
+      const normalizedEmail = emailInput.trim().toLowerCase();
+
+      // 正規化したメールアドレスをハッシュ化して比較
+      const inputHash = await sha256(normalizedEmail);
 
       if (inputHash === ALLOWED_HASH) {
         // 認証成功：フォームを隠し、iframeにURLをセットしてアプリを表示
@@ -114,7 +117,7 @@
         document.getElementById('app-container').style.display = 'block';
         
         const iframe = document.getElementById('gasiframe');
-        iframe.src = gasAppUrl + '?email=' + encodeURIComponent(emailInput.trim());
+        iframe.src = gasAppUrl + '?email=' + encodeURIComponent(normalizedEmail);
       } else {
         // 認証失敗
         errorMsg.textContent = 'このメールアドレスはアクセスが許可されていません。';
