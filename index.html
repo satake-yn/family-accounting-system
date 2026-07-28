@@ -18,8 +18,11 @@
   window.onload = (e) => {
     // ※ ここに「ウェブアプリとしてデプロイ」した際のURLを設定してください
     const gasappurl = 'https://script.google.com/macros/s/AKfycbxK7v_C2QmCFzcsuqx816z1XjiOaXYcPb4nj4sf1UN-A1MtK1qE5Dl7bX2QFBBOJdfkEg/exec';
-    let ifm = document.getElementById('gasiframe');
-    ifm.src = gasappurl + window.location.search;
+    
+    // iframeではなく、ウィンドウ自体をGASへ遷移させる
+    window.location.replace(gasappurl + window.location.search);
+    // let ifm = document.getElementById('gasiframe');
+    // ifm.src = gasappurl + window.location.search;
   }
 </script>
 <body>
