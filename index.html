@@ -113,9 +113,9 @@
         // 認証成功：フォームを隠し、入力されたパスコードをURLに付与してGASへ投げる
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
-        
-        const iframe = document.getElementById('gasiframe');
-        iframe.src = gasAppUrl + '?email=' + encodeURIComponent(normalizedEmail)
+      
+      let ifm = document.getElementById('gasiframe');
+      ifm.src = gasappurl + window.location.search;
       } else {
         errorMsg.textContent = 'メールアドレスが間違っています。';
       }
