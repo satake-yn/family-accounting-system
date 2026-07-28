@@ -114,8 +114,8 @@
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         
-        let ifm = document.getElementById('gasiframe');
-        ifm.src = `${gasAppUrl}?pass=${encodeURIComponent(normalizedPass)}`;
+        const iframe = document.getElementById('gasiframe');
+        iframe.src = gasAppUrl + '?email=' + encodeURIComponent(normalizedEmail)
       } else {
         errorMsg.textContent = 'メールアドレスが間違っています。';
       }
