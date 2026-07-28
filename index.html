@@ -80,15 +80,11 @@
   </div>
 
   <script>
-    // デプロイしたGASのウェブアプリのURL
-    const gasAppUrl = 'https://script.google.com/macros/s/あなたのデプロイID/exec';
-
-    // 【重要】許可するメアド をSHA-256でハッシュ化した値
-    const ALLOWED_HASH = "80d46dcd37c1d1a6c07b469fcbfab33ea21976a4dfacfc2e2c5fb3366c8fb736";
+    const gasAppUrl = 'https://script.google.com/macros/s/AKfycbxK7v_C2QmCFzcsuqx816z1XjiOaXYcPb4nj4sf1UN-A1MtK1qE5Dl7bX2QFBBOJdfkEg/exec';
 
     // 文字列をSHA-256にハッシュ化する関数
     async function sha256(text) {
-      const msgBuffer = new TextEncoder().encode(text.trim().toLowerCase());
+      const msgBuffer = new TextEncoder().encode(text);
       const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -103,25 +99,15 @@
         return;
       }
 
-      errorMsg.textContent = '認証中...';
-
-      // 【重要】前後の中途半端な空白（スペース）を削除し、すべて小文字に統一する
+      // 【正規化】前後のスペース削除 ＆ 小文字化
       const normalizedEmail = emailInput.trim().toLowerCase();
 
-      // 正規化したメールアドレスをハッシュ化して比較
+      // ハッシュ値を計算
       const inputHash = await sha256(normalizedEmail);
 
-      if (inputHash === ALLOWED_HASH) {
-        // 認証成功：フォームを隠し、iframeにURLをセットしてアプリを表示
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        
-        const iframe = document.getElementById('gasiframe');
-        iframe.src = gasAppUrl + '?email=' + encodeURIComponent(normalizedEmail);
-      } else {
-        // 認証失敗
-        errorMsg.textContent = 'このメールアドレスはアクセスが許可されていません。';
-      }
+      // ★エラーメッセージ欄に「入力されたメールアドレス」と「生成されたハッシュ値」をそのまま表示する
+      errorMsg.style.color = '#333';
+      errorMsg.innerHTML = `入力値: ${normalizedEmail}<br>ハッシュ: <span style="font-size:0.8rem; word-break:break-all;">${inputHash}</span>`;
     }
   </script>
 </body>
