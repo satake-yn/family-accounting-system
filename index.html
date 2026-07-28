@@ -77,14 +77,14 @@
   </div>
 
   <script>
-    // デプロイしたGASのウェブアプリのURL
+    // デプロイしたGASのウェブアプリのURLを設定してください
     const gasAppUrl = 'https://script.google.com/macros/s/AKfycbxK7v_C2QmCFzcsuqx816z1XjiOaXYcPb4nj4sf1UN-A1MtK1qE5Dl7bX2QFBBOJdfkEg/exec';
 
-    // メールアドレスのハッシュ
+    // 正しいメールアドレスのハッシュ
     const ALLOWED_EMAIL_HASH = "e96d78eef2512c692587effbd6aef33415c90f65a5ceace2432f78a2d899b465";
 
-    // パスコードのハッシュ
-    const ALLOWED_PASS_HASH = "8b671a5f69f2010db0147fc2b60458df8a2641f238b97d1979b940902c668b55";
+    // 正しいパスコード（0717）のハッシュ
+    const ALLOWED_PASS_HASH = "a5396c5cbdfad7f0c4a9b763830d0d0742d49c39eeb32ab64a8f02627fd8df0f";
 
     async function sha256(text) {
       const msgBuffer = new TextEncoder().encode(text);
@@ -103,6 +103,7 @@
         return;
       }
 
+      errorMsg.style.color = '#e74c3c';
       errorMsg.textContent = '認証中...';
 
       const normalizedEmail = emailInput.trim().toLowerCase();
@@ -111,15 +112,18 @@
       const inputEmailHash = await sha256(normalizedEmail);
       const inputPassHash = await sha256(normalizedPass);
 
-      // ★画面に「入力されたメールのハッシュ」と「入力されたパスのハッシュ」を表示して確認する
-      errorMsg.style.color = '#333';
-      errorMsg.style.fontSize = '0.8rem';
-      errorMsg.innerHTML = `
-        入力メール: ${normalizedEmail}<br>
-        メイルハッシュ: ${inputEmailHash}<br><br>
-        入力パス: ${normalizedPass}<br>
-        パスハッシュ: ${inputPassHash}
-      `;
+      if (inputEmailHash === ALLOWED_EMAIL_HASH && inputPassHash === ALLOWED_PASS_HASH) {
+        // 認証成功：フォームを隠し、iframeに合言葉付きのURLをセットしてアプリを表示
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        
+        const secretKey = "yn-setake-kakeibo-App_07";
+        
+        const iframe = document.getElementById('gasiframe');
+        iframe.src = `${gasAppUrl}?key=${secretKey}&email=${encodeURIComponent(normalizedEmail)}`;
+      } else {
+        errorMsg.textContent = 'メールアドレスまたはパスコードが間違っています。';
+      }
     }
   </script>
 </body>
