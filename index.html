@@ -109,8 +109,10 @@
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         
+        // GAS側と共通の合言葉をパラメータに含める
+        const secretKey = "my_super_secret_key_2026";
         const iframe = document.getElementById('gasiframe');
-        iframe.src = gasAppUrl + '?email=' + encodeURIComponent(normalizedEmail);
+        iframe.src = `${gasAppUrl}?key=${secretKey}&email=${encodeURIComponent(normalizedEmail)}`;
       } else {
         // 認証失敗
         errorMsg.style.color = '#e74c3c';
