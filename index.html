@@ -81,49 +81,44 @@
 
   <script>
     // デプロイしたGASのウェブアプリのURL
-    const gasAppUrl = 'https://script.google.com/macros/s/AKfycbxK7v_C2QmCFzcsuqx816z1XjiOaXYcPb4nj4sf1UN-A1MtK1qE5Dl7bX2QFBBOJdfkEg/exec';
+    const gasAppUrl = 'https://script.google.com/macros/s/あなたのデプロイID/exec';
 
-    function checkAuth() {
-      const email = document.getElementById('email-input').value.trim();
+    // 【重要】許可するメアド をSHA-256でハッシュ化した値
+    const ALLOWED_HASH = "80d46dcd37c1d1a6c07b469fcbfab33ea21976a4dfacfc2e2c5fb3366c8fb736";
+
+    // 文字列をSHA-256にハッシュ化する関数
+    async function sha256(text) {
+      const msgBuffer = new TextEncoder().encode(text.trim().toLowerCase());
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function checkAuth() {
+      const emailInput = document.getElementById('email-input').value;
       const errorMsg = document.getElementById('error-msg');
       
-      if (!email) {
+      if (!emailInput) {
         errorMsg.textContent = 'メールアドレスを入力してください。';
         return;
       }
 
       errorMsg.textContent = '認証中...';
 
-      // redirect: 'follow' を追加してリダイレクトを追跡できるようにする
-      fetch(`${gasAppUrl}?mode=api&email=${encodeURIComponent(email)}`, {
-        method: 'GET',
-        redirect: 'follow' 
-      })
-      .then(response => {
-        // レスポンスがJSONとして正しく返ってきているか確認
-        if (!response.ok) {
-          throw new Error('サーバーからの応答が異常です');
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data.status === 'success') {
-          // 認証成功：フォームを隠し、iframeにURLをセットしてアプリを表示
-          document.getElementById('auth-container').style.display = 'none';
-          document.getElementById('app-container').style.display = 'block';
-          
-          const iframe = document.getElementById('gasiframe');
-          iframe.src = gasAppUrl + '?email=' + encodeURIComponent(email);
-        } else {
-          // 認証失敗
-          errorMsg.textContent = 'このメールアドレスはアクセスが許可されていません。';
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        // ここで通信エラーが出ている原因を特定するため、ブラウザのコンソール(F12)も確認してみてください
-        errorMsg.textContent = '通信エラーが発生しました。';
-      });
+      // 入力されたメールアドレスをハッシュ化して比較
+      const inputHash = await sha256(emailInput);
+
+      if (inputHash === ALLOWED_HASH) {
+        // 認証成功：フォームを隠し、iframeにURLをセットしてアプリを表示
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        
+        const iframe = document.getElementById('gasiframe');
+        iframe.src = gasAppUrl + '?email=' + encodeURIComponent(emailInput.trim());
+      } else {
+        // 認証失敗
+        errorMsg.textContent = 'このメールアドレスはアクセスが許可されていません。';
+      }
     }
   </script>
 </body>
