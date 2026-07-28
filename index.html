@@ -111,18 +111,15 @@
       const inputEmailHash = await sha256(normalizedEmail);
       const inputPassHash = await sha256(normalizedPass);
 
-      if (inputEmailHash === ALLOWED_EMAIL_HASH && inputPassHash === ALLOWED_PASS_HASH) {
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        
-        // ご指定いただいた合言葉を設定
-        const secretKey = "yn-setake-kakeibo-App_07";
-        
-        const iframe = document.getElementById('gasiframe');
-        iframe.src = `${gasAppUrl}?key=${secretKey}&email=${encodeURIComponent(normalizedEmail)}`;
-      } else {
-        errorMsg.textContent = 'メールアドレスまたはパスコードが間違っています。';
-      }
+      // ★画面に「入力されたメールのハッシュ」と「入力されたパスのハッシュ」を表示して確認する
+      errorMsg.style.color = '#333';
+      errorMsg.style.fontSize = '0.8rem';
+      errorMsg.innerHTML = `
+        入力メール: ${normalizedEmail}<br>
+        メイルハッシュ: ${inputEmailHash}<br><br>
+        入力パス: ${normalizedPass}<br>
+        パスハッシュ: ${inputPassHash}
+      `;
     }
   </script>
 </body>
