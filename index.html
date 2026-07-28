@@ -94,12 +94,18 @@
 
       errorMsg.textContent = '認証中...';
 
-      // GAS側にメールアドレスを投げて許可されているか確認する
-      // （※GAS側で doGet または doPost でメールアドレスを受け取り、スプレッドシート等と照合して true/false を返す処理を想定）
+      // redirect: 'follow' を追加してリダイレクトを追跡できるようにする
       fetch(`${gasAppUrl}?mode=api&email=${encodeURIComponent(email)}`, {
         method: 'GET',
+        redirect: 'follow' 
       })
-      .then(response => response.json())
+      .then(response => {
+        // レスポンスがJSONとして正しく返ってきているか確認
+        if (!response.ok) {
+          throw new Error('サーバーからの応答が異常です');
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.status === 'success') {
           // 認証成功：フォームを隠し、iframeにURLをセットしてアプリを表示
@@ -115,6 +121,7 @@
       })
       .catch(error => {
         console.error('Error:', error);
+        // ここで通信エラーが出ている原因を特定するため、ブラウザのコンソール(F12)も確認してみてください
         errorMsg.textContent = '通信エラーが発生しました。';
       });
     }
