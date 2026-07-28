@@ -77,14 +77,11 @@
   </div>
 
   <script>
-    // デプロイしたGASのウェブアプリのURLを設定してください
-    const gasAppUrl = 'https://script.google.com/macros/s/AKfycbxK7v_C2QmCFzcsuqx816z1XjiOaXYcPb4nj4sf1UN-A1MtK1qE5Dl7bX2QFBBOJdfkEg/exec';
+    // デプロイしたGASのウェブアプリのURL
+    const gasAppUrl = 'https://script.google.com/macros/s/あなたのデプロイID/exec';
 
-    // 正しいメールアドレスのハッシュ
+    // 正しいメールアドレスのハッシュ (yn.satake@gmail.com)
     const ALLOWED_EMAIL_HASH = "e96d78eef2512c692587effbd6aef33415c90f65a5ceace2432f78a2d899b465";
-
-    // 正しいパスコード（0717）のハッシュ
-    const ALLOWED_PASS_HASH = "a5396c5cbdfad7f0c4a9b763830d0d0742d49c39eeb32ab64a8f02627fd8df0f";
 
     async function sha256(text) {
       const msgBuffer = new TextEncoder().encode(text);
@@ -110,19 +107,17 @@
       const normalizedPass = passInput.trim();
 
       const inputEmailHash = await sha256(normalizedEmail);
-      const inputPassHash = await sha256(normalizedPass);
 
-      if (inputEmailHash === ALLOWED_EMAIL_HASH && inputPassHash === ALLOWED_PASS_HASH) {
-        // 認証成功：フォームを隠し、iframeに合言葉付きのURLをセットしてアプリを表示
+      // メールアドレスが合っているかチェック
+      if (inputEmailHash === ALLOWED_EMAIL_HASH) {
+        // 認証成功：フォームを隠し、入力されたパスコードをURLに付与してGASへ投げる
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         
-        const secretKey = "yn-setake-kakeibo-App_07";
-        
-        const iframe = document.getElementById('gasiframe');
-        iframe.src = `${gasAppUrl}?key=${secretKey}&email=${encodeURIComponent(normalizedEmail)}`;
+        let ifm = document.getElementById('gasiframe');
+        ifm.src = `${gasAppUrl}?pass=${encodeURIComponent(normalizedPass)}&email=${encodeURIComponent(normalizedEmail)}`;
       } else {
-        errorMsg.textContent = 'メールアドレスまたはパスコードが間違っています。';
+        errorMsg.textContent = 'メールアドレスが間違っています。';
       }
     }
   </script>
