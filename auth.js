@@ -13,57 +13,73 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function setupLoginEvents() {
+function setupLoginEvent() {
   const form = document.getElementById('login-form');
+  const emailInput = document.getElementById('email');
+  const passcodeInput = document.getElementById('passcode');
+  const loginBtn = document.getElementById('login-btn');
+  const errorMsg = document.getElementById('error-message');
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('email-input').value.trim();
-    const passcode = document.getElementById('passcode-input').value.trim();
-    const errorMsg = document.getElementById('error-message');
-    const loginBtn = document.getElementById('login-btn');
 
     errorMsg.textContent = '';
     loginBtn.disabled = true;
     loginBtn.textContent = '認証中...';
 
     try {
+      const email = emailInput.value.trim();
+      const passcode = passcodeInput.value;
+
       const emailHash = await sha256(email);
       const passcodeHash = await sha256(passcode);
 
-      // GAS側へ認証を依頼するため、iframeを一時的に作って通信するか、
-      // あるいはJSONP/fetch等でCode.gs.authenticate()を呼ぶ必要があるが、
-      // 本構成ではGASの関数を安全に呼び出すために google.script.run が使えない環境（GitHub Pages単体）のため、
-      // GAS側へメッセージングやAPI経由で投げる、あるいはGASのエンドポイントにdoPostで認証リクエストを送る形になる。
-      // ※要件のフロー「Code.gs.authenticate()」をGitHub Pagesから実行するため、
-      //   GASをAPIエンドポイント（doPost）として呼び出すか、あるいはiframe経由でハンドリングさせる。
-      //   ここでは標準的なfetchによるGAS doPost経由でのauthenticate実行を実装する。
-     
-    const res = await fetch(GAS_APP_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'text/plain;charset=utf-8'
-  },
-  body: JSON.stringify({
-    action: 'authenticate',
-    emailHash,
-    passcodeHash
-  })
-});
+      const res = await fetch(GAS_APP_URL, {
+        method: 'POST',
+        headers: {
+          // GASへJSONを送る
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify({
+          action: 'authenticate',
+          emailHash,
+          passcodeHash
+        })
+      });
 
-const data = await res.json();
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
 
-if (data.success && data.token) {
-    console.log("認証成功");
-    localStorage.setItem(TOKEN_KEY, data.token);
+      const data = await res.json();
 
-    console.log("bootGasApp開始");
-    bootGasApp(data.token);
-    console.log("bootGasApp終了");
-} else {
-    errorMsg.textContent = data.message || '認証に失敗しました。メールアドレスまたはパスコードが誤っています。';
-    loginBtn.disabled = false;
-    loginBtn.textContent = 'ログイン';
-}  });
+      if (data.success && data.token) {
+        localStorage.setItem(TOKEN_KEY, data.token);
+
+        console.log('認証成功');
+        console.log('bootGasApp開始');
+
+        bootGasApp(data.token);
+
+        console.log('bootGasApp終了');
+      } else {
+        errorMsg.textContent =
+          data.message ||
+          '認証に失敗しました。メールアドレスまたはパスコードが誤っています。';
+
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'ログイン';
+      }
+    } catch (err) {
+      console.error(err);
+
+      errorMsg.textContent =
+        '通信エラーが発生しました。時間をおいて再度お試しください。';
+
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'ログイン';
+    }
+  });
 }
 
 async function sha256(text) {
