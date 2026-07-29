@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setupLoginEvent() {
   const form = document.getElementById('login-form');
-  const emailInput = document.getElementById('email');
-  const passcodeInput = document.getElementById('passcode');
+  const emailInput = document.getElementById('email-input');
+  const passcodeInput = document.getElementById('passcode-input');
   const loginBtn = document.getElementById('login-btn');
   const errorMsg = document.getElementById('error-message');
 
