@@ -39,9 +39,17 @@ function setupLoginEvents() {
       //   ここでは標準的なfetchによるGAS doPost経由でのauthenticate実行を実装する。
       
       const res = await fetch(GAS_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'authenticate', emailHash, passcodeHash })
-      });
+    method: 'POST',
+    headers: {
+        // application/json ではなく text/plain にするのがGASのCORS回避・POST受け取りの定番テクニックです
+        'Content-Type': 'text/plain;charset=utf-8',
+    },
+    body: JSON.stringify({ 
+        action: 'authenticate', 
+        emailHash, 
+        passcodeHash 
+    })
+});
       const data = await res.json();
 
       if (data.success && data.token) {
