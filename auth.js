@@ -99,13 +99,14 @@ function bootGasApp(token) {
   console.log(iframe.src);
 
   iframe.onload = () => {
-  console.log("iframe onload");
-
+  setTimeout(() => {
     iframe.contentWindow.postMessage({
-  type: 'AUTH',
-  token: token
-}, "*");
-    
+      type: 'AUTH',
+      token: token
+    }, '*');
+  }, 500);
+};
+  
 /*
   iframe.contentWindow.postMessage({
     type: 'AUTH',
