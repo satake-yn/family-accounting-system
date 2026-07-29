@@ -91,38 +91,13 @@ async function sha256(text) {
 
 function bootGasApp(token) {
   document.getElementById('login-container').style.display = 'none';
+
   const iframe = document.getElementById('gasiframe');
   iframe.style.display = 'block';
 
-  // URLパラメータは一切含めないクリーンなURLを指定
-  iframe.src = GAS_APP_URL;
-  console.log(iframe.src);
-
-  iframe.onload = () => {
-  setTimeout(() => {
-    iframe.contentWindow.postMessage({
-      type: 'AUTH',
-      token: token
-    }, '*');
-  }, 500);
-};
-  
-/*
-  iframe.contentWindow.postMessage({
-    type: 'AUTH',
-    token: token
-  }, 'https://script.googleusercontent.com');
-};*/
-
-  // ログアウトやセッション失効メッセージをGASから受け取るリスナー
-  window.addEventListener('message', (event) => {
-    if (event.origin !== 'https://script.googleusercontent.com') return;
-    if (event.data && event.data.type === 'LOGOUT') {
-      handleLogoutLocally();
-    }
-  });
+  iframe.src =
+    GAS_APP_URL + '?token=' + encodeURIComponent(token);
 }
-
 function handleLogoutLocally() {
   localStorage.removeItem(TOKEN_KEY);
   document.getElementById('gasiframe').style.display = 'none';
