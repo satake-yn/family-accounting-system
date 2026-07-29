@@ -98,12 +98,13 @@ function bootGasApp(token) {
   iframe.src = GAS_APP_URL;
 
   iframe.onload = () => {
-    // 読み込み完了後にpostMessageでトークンを送信（origin固定）
-    iframe.contentWindow.postMessage({
-  type: 'AUTH',
-  token: token
-}, 'https://script.googleusercontent.com');
-  };
+  console.log("iframe onload");
+
+  iframe.contentWindow.postMessage({
+    type: 'AUTH',
+    token: token
+  }, 'https://script.googleusercontent.com');
+};
 
   // ログアウトやセッション失効メッセージをGASから受け取るリスナー
   window.addEventListener('message', (event) => {
