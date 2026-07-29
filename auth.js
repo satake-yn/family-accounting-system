@@ -13,6 +13,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+window.addEventListener('message', (event) => {
+
+  if (event.data && event.data.type === 'LOGOUT') {
+
+    localStorage.removeItem(TOKEN_KEY);
+
+    const iframe = document.getElementById('gasiframe');
+    iframe.style.display = 'none';
+
+    const login = document.getElementById('login-container');
+    login.style.display = 'flex';
+
+    document.getElementById('login-form').reset();
+
+    document.getElementById('login-btn').disabled = false;
+    document.getElementById('login-btn').textContent = 'ログイン';
+  }
+
+});
+
 function setupLoginEvent() {
   const form = document.getElementById('login-form');
   const emailInput = document.getElementById('email-input');
