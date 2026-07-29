@@ -84,14 +84,14 @@ function bootGasApp(token) {
   iframe.onload = () => {
     // 読み込み完了後にpostMessageでトークンを送信（origin固定）
     iframe.contentWindow.postMessage({
-      type: 'AUTH',
-      token: token
-    }, 'https://script.google.com');
+  type: 'AUTH',
+  token: token
+}, 'https://script.googleusercontent.com');
   };
 
   // ログアウトやセッション失効メッセージをGASから受け取るリスナー
   window.addEventListener('message', (event) => {
-    if (event.origin !== 'https://script.google.com') return;
+    if (event.origin !== 'https://script.googleusercontent.com') return;
     if (event.data && event.data.type === 'LOGOUT') {
       handleLogoutLocally();
     }
