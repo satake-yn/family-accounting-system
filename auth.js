@@ -38,25 +38,25 @@ function setupLoginEvents() {
       //   GASをAPIエンドポイント（doPost）として呼び出すか、あるいはiframe経由でハンドリングさせる。
       //   ここでは標準的なfetchによるGAS doPost経由でのauthenticate実行を実装する。
       
-      const res = await fetch(GAS_APP_URL, {
-    method: 'POST',
-    headers: {
-        // application/json ではなく text/plain にするのがGASのCORS回避・POST受け取りの定番テクニックです
-        'Content-Type': 'text/plain;charset=utf-8',
-    },
-    body: JSON.stringify({ 
-        action: 'authenticate', 
-        emailHash, 
-        passcodeHash 
-    })
+    const res = await fetch(GAS_APP_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'text/plain;charset=utf-8'
+  },
+  body: JSON.stringify({
+    action: 'authenticate',
+    emailHash,
+    passcodeHash
+  })
 });
-console.log(res);
-console.log(res.status);
-console.log(res.type);
-console.log(res.redirected);
-console.log(res.url);
-const data = await res.json();
 
+console.log("status", res.status);
+console.log("content-type", res.headers.get("content-type"));
+
+const text = await res.text();
+console.log(text);
+
+/*
 console.log("response =", data);
 
 if (data.success && data.token) {
@@ -78,6 +78,7 @@ if (data.success && data.token) {
       loginBtn.textContent = 'ログイン';
     }
   });
+  */
 }
 
 async function sha256(text) {
