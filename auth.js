@@ -55,12 +55,18 @@ console.log(res.status);
 console.log(res.type);
 console.log(res.redirected);
 console.log(res.url);
-      const data = await res.json();
+const data = await res.json();
 
-      if (data.success && data.token) {
-        localStorage.setItem(TOKEN_KEY, data.token);
-        bootGasApp(data.token);
-      } else {
+console.log("response =", data);
+
+if (data.success && data.token) {
+    console.log("認証成功");
+    localStorage.setItem(TOKEN_KEY, data.token);
+
+    console.log("bootGasApp開始");
+    bootGasApp(data.token);
+    console.log("bootGasApp終了");
+} else {
         errorMsg.textContent = data.message || '認証に失敗しました。メールアドレスまたはパスコードが誤っています。';
         loginBtn.disabled = false;
         loginBtn.textContent = 'ログイン';
