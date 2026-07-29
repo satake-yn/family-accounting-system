@@ -78,7 +78,6 @@ if (data.success && data.token) {
       loginBtn.textContent = 'ログイン';
     }
   });
-  */
 }
 
 async function sha256(text) {
