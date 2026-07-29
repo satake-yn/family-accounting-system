@@ -51,7 +51,6 @@ function setupLoginEvents() {
 });
 
 const data = await res.json();
-      console.log(data);
 
 if (data.success && data.token) {
     console.log("認証成功");
@@ -61,17 +60,10 @@ if (data.success && data.token) {
     bootGasApp(data.token);
     console.log("bootGasApp終了");
 } else {
-        errorMsg.textContent = data.message || '認証に失敗しました。メールアドレスまたはパスコードが誤っています。';
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'ログイン';
-      }
-    } catch (err) {
-      console.error(err);
-      errorMsg.textContent = '通信エラーが発生しました。時間をおいて再度お試しください。';
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'ログイン';
-    }
-  });
+    errorMsg.textContent = data.message || '認証に失敗しました。メールアドレスまたはパスコードが誤っています。';
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'ログイン';
+}  });
 }
 
 async function sha256(text) {
