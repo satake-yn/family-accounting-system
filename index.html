@@ -11,115 +11,78 @@
   <base target="_top">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body, html { width: 100%; height: 100vh; overflow: hidden; font-family: sans-serif; }
+    html, body { width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; }
+    iframe { border: none; width: 100%; height: 100%; display: none; }
     
-    #auth-container {
+    /* ログイン画面スタイル */
+    #login-container {
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
+      width: 100%;
       height: 100vh;
-      background-color: #f7f9fa;
+      padding: 16px;
     }
-    .auth-box {
-      background: white;
-      padding: 30px;
+    .login-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    h2 { font-size: 1.1rem; margin-bottom: 16px; text-align: center; color: #1e293b; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.8rem; color: #64748b; margin-bottom: 6px; font-weight: 600; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 90%;
-      max-width: 400px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+      outline: none;
     }
-    .auth-box h2 { margin-bottom: 20px; font-size: 1.2rem; color: #333; }
-    .auth-box input {
+    input:focus { border-color: #1e293b; }
+    .btn {
       width: 100%;
       padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-    .auth-box button {
-      width: 100%;
-      padding: 10px;
-      background-color: #4CAF50;
-      color: white;
+      background-color: #1e293b;
+      color: #ffffff;
       border: none;
-      border-radius: 4px;
-      font-size: 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
+      margin-top: 8px;
     }
-    .auth-box button:hover { background-color: #45a049; }
-    #error-msg { color: #e74c3c; margin-top: 10px; font-size: 0.9rem; }
-
-    #app-container {
-      display: none;
-      width: 100%;
-      height: 100vh;
-    }
-    iframe { border: none; width: 100%; height: 100%; }
+    .btn:active { background-color: #334155; }
+    .error-msg { color: #dc2626; font-size: 0.75rem; text-align: center; margin-top: 10px; min-height: 1rem; }
   </style>
 </head>
 <body>
-
-  <div id="auth-container">
-    <div class="auth-box">
+  <!-- ログイン画面 -->
+  <div id="login-container">
+    <div class="login-card">
       <h2>家計簿アプリ ログイン</h2>
-      <input type="email" id="email-input" placeholder="メールアドレスを入力" required>
-      <input type="password" id="pass-input" placeholder="パスコードを入力" required>
-      <button onclick="checkAuth()">認証する</button>
-      <div id="error-msg"></div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email-input">メールアドレス</label>
+          <input type="email" id="email-input" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="passcode-input">パスコード</label>
+          <input type="password" id="passcode-input" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn" id="login-btn">ログイン</button>
+        <div id="error-message" class="error-msg"></div>
+      </form>
     </div>
   </div>
 
-  <div id="app-container">
-    <iframe id="gasiframe" src="about:blank"></iframe>
-  </div>
+  <!-- GAS表示用iframe（URLパラメータは一切付与しない） -->
+  <iframe id="gasiframe" src="about:blank"></iframe>
 
-  <script>
-    // デプロイしたGASのウェブアプリのURL
-    const gasAppUrl = 'https://script.google.com/macros/s/AKfycbxK7v_C2QmCFzcsuqx816z1XjiOaXYcPb4nj4sf1UN-A1MtK1qE5Dl7bX2QFBBOJdfkEg/exec';
-
-    // 正しいメールアドレスのハッシュ
-    const ALLOWED_EMAIL_HASH = "e96d78eef2512c692587effbd6aef33415c90f65a5ceace2432f78a2d899b465";
-
-    async function sha256(text) {
-      const msgBuffer = new TextEncoder().encode(text);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function checkAuth() {
-      const emailInput = document.getElementById('email-input').value;
-      const passInput = document.getElementById('pass-input').value;
-      const errorMsg = document.getElementById('error-msg');
-      
-      if (!emailInput || !passInput) {
-        errorMsg.textContent = 'メールアドレスとパスコードを入力してください。';
-        return;
-      }
-
-      errorMsg.style.color = '#e74c3c';
-      errorMsg.textContent = '認証中...';
-
-      const normalizedEmail = emailInput.trim().toLowerCase();
-      const normalizedPass = passInput.trim();
-
-      const inputEmailHash = await sha256(normalizedEmail);
-
-      // メールアドレスが合っているかチェック
-      if (inputEmailHash === ALLOWED_EMAIL_HASH) {
-        // 認証成功：フォームを隠し、入力されたパスコードをURLに付与してGASへ投げる
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-      
-      let ifm = document.getElementById('gasiframe');
-      ifm.src = gasappurl + window.location.search;
-      } else {
-        errorMsg.textContent = 'メールアドレスが間違っています。';
-      }
-    }
-  </script>
+  <script src="auth.js"></script>
 </body>
 </html>
