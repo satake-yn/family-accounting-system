@@ -85,7 +85,7 @@ function bootGasApp(token) {
   };
 
   // ログアウトやセッション失効メッセージをGASから受け取るリスナー
-  window.addEventListener('message, (event) => {
+  window.addEventListener(message, (event) => {
     if (event.origin !== 'https://script.google.com') return;
     if (event.data && event.data.type === 'LOGOUT') {
       handleLogoutLocally();
