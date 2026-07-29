@@ -56,7 +56,7 @@ console.log("content-type", res.headers.get("content-type"));
 const text = await res.text();
 console.log(text);
 
-/*
+
 console.log("response =", data);
 
 if (data.success && data.token) {
