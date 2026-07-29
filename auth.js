@@ -50,6 +50,13 @@ function setupLoginEvents() {
         passcodeHash 
     })
 });
+      const res = await fetch(...);
+
+console.log(res);
+console.log(res.status);
+console.log(res.type);
+console.log(res.redirected);
+console.log(res.url);
       const data = await res.json();
 
       if (data.success && data.token) {
