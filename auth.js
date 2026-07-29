@@ -96,6 +96,7 @@ function bootGasApp(token) {
 
   // URLパラメータは一切含めないクリーンなURLを指定
   iframe.src = GAS_APP_URL;
+  console.log(iframe.src);
 
   iframe.onload = () => {
   console.log("iframe onload");
