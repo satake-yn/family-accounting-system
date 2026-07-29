@@ -51,6 +51,7 @@ function setupLoginEvents() {
 });
 
 const data = await res.json();
+      console.log(data);
 
 if (data.success && data.token) {
     console.log("認証成功");
