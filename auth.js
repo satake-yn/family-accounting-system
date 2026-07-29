@@ -50,8 +50,6 @@ function setupLoginEvents() {
         passcodeHash 
     })
 });
-      const res = await fetch(...);
-
 console.log(res);
 console.log(res.status);
 console.log(res.type);
