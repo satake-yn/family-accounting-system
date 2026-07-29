@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bootGasApp(token);
   } else {
     // 初回：ログイン画面を表示
-    setupLoginEvents();
+    setupLoginEvent();
   }
 });
 
