@@ -37,7 +37,7 @@ function setupLoginEvents() {
       // ※要件のフロー「Code.gs.authenticate()」をGitHub Pagesから実行するため、
       //   GASをAPIエンドポイント（doPost）として呼び出すか、あるいはiframe経由でハンドリングさせる。
       //   ここでは標準的なfetchによるGAS doPost経由でのauthenticate実行を実装する。
-      
+     
     const res = await fetch(GAS_APP_URL, {
   method: 'POST',
   headers: {
@@ -50,14 +50,7 @@ function setupLoginEvents() {
   })
 });
 
-console.log("status", res.status);
-console.log("content-type", res.headers.get("content-type"));
-
-const text = await res.text();
-console.log(text);
-
-
-console.log("response =", data);
+const data = await res.json();
 
 if (data.success && data.token) {
     console.log("認証成功");
