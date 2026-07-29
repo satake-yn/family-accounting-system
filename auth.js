@@ -101,11 +101,17 @@ function bootGasApp(token) {
   iframe.onload = () => {
   console.log("iframe onload");
 
+    iframe.contentWindow.postMessage({
+  type: 'AUTH',
+  token: token
+}, "*");
+    
+/*
   iframe.contentWindow.postMessage({
     type: 'AUTH',
     token: token
   }, 'https://script.googleusercontent.com');
-};
+};*/
 
   // ログアウトやセッション失効メッセージをGASから受け取るリスナー
   window.addEventListener('message', (event) => {
